@@ -899,7 +899,7 @@
 
   <div class="right-column">
     <div class="controls-bar">
-      <button class="ctrl-btn active" id="btn-autorotate">⟳ Tự xoay</button>
+      <button class="ctrl-btn" id="btn-autorotate">⟳ Tự xoay</button>
       <button class="ctrl-btn active" id="btn-markers">📍 Điểm Analog</button>
       <button class="ctrl-btn" id="btn-wireframe">▦ Lưới 3D</button>
       <button class="ctrl-btn" id="btn-reset">⌖ Đặt lại góc nhìn</button>
@@ -1141,7 +1141,7 @@
       controls.minDistance = 2.6;
       controls.maxDistance = 16;
       controls.enablePan = false;
-      controls.autoRotate = true;
+      controls.autoRotate = false;
       controls.autoRotateSpeed = 0.85;
 
       const sunLight = new THREE.DirectionalLight(0xffffff, 1.55);
