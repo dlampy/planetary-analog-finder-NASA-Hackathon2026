@@ -73,7 +73,39 @@
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: #38bdf8;
+    }
+
+    .brand-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
       margin-bottom: 4px;
+    }
+
+    .left-collapse-btn {
+      pointer-events: auto;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.06);
+      color: #cbd5e1;
+      border-radius: 8px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.18s ease;
+    }
+
+    .left-collapse-btn:hover {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: rgba(56, 189, 248, 0.65);
+      color: #fff;
+    }
+
+    .left-column.collapsed .brand,
+    .left-column.collapsed .info-panel {
+      display: none;
     }
 
     .brand h1 {
@@ -94,7 +126,7 @@
       position: fixed;
       top: 18px;
       right: 22px;
-      z-index: 15;
+      z-index: 20;
       display: flex;
       flex-direction: column;
       align-items: flex-end;
@@ -156,6 +188,66 @@
       gap: 8px;
       flex-wrap: wrap;
       justify-content: flex-end;
+    }
+
+    /* Ô cài đặt tổng hợp duy nhất ở góc trên phải */
+    .settings-drawer {
+      pointer-events: auto;
+      width: min(300px, calc(100vw - 24px));
+      background: rgba(9, 14, 28, 0.94);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(56, 189, 248, 0.42);
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.72);
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      animation: popIn 0.16s ease-out;
+    }
+
+    .settings-drawer[hidden] {
+      display: none;
+    }
+
+    .settings-section-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #38bdf8;
+      margin-bottom: 6px;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+    }
+
+    .settings-grid .ctrl-btn {
+      width: 100%;
+      justify-content: flex-start;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+
+    .settings-grid .ctrl-btn.span-2 {
+      grid-column: 1 / -1;
+    }
+
+    .settings-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .settings-stack .ctrl-btn {
+      width: 100%;
+      justify-content: space-between;
+      padding: 9px 11px;
+      font-size: 12px;
     }
 
     /* Cửa sổ nguồn dữ liệu NASA / CSA / ESA / JAXA */
@@ -1251,6 +1343,14 @@
       gap: 10px;
       user-select: none;
       pointer-events: auto;
+      transition: opacity 0.16s ease, transform 0.16s ease;
+    }
+
+    .ge-nav.is-hidden-by-settings {
+      opacity: 0;
+      transform: translateX(10px);
+      pointer-events: none;
+      visibility: hidden;
     }
 
     .ge-compass-wrap {
@@ -1494,6 +1594,7 @@
         top: auto;
         bottom: 102px;
         right: 10px;
+        flex-direction: column-reverse;
       }
       .dual-link-banner {
         display: none;
@@ -1526,9 +1627,12 @@
   <div id="canvas-container"></div>
   <div id="marker-tooltip"></div>
 
-  <div class="left-column">
+  <div class="left-column" id="left-column">
     <div class="brand">
-      <span class="brand-badge">NASA Space Apps 2026 · 3D Explorer</span>
+      <div class="brand-top-row">
+        <span class="brand-badge">NASA Space Apps 2026 · 3D Explorer</span>
+        <button class="left-collapse-btn" id="btn-left-hide" type="button" title="Ẩn toàn bộ khung thông tin bên trái">« Ẩn</button>
+      </div>
       <h1>Mô hình 3D Trái Đất, Mặt Trăng &amp; Sao Hỏa</h1>
       <p>Kéo để xoay · Cuộn để zoom · Click 3 ô bên dưới (hoặc phím 1, 2, 3)</p>
     </div>
@@ -1550,19 +1654,30 @@
     </aside>
   </div>
 
-  <div class="right-column">
-    <div class="controls-bar">
-      <button class="ctrl-btn" id="btn-autorotate">⟳ Tự xoay</button>
-      <button class="ctrl-btn active" id="btn-upright-axis" title="Giữ trục Bắc–Nam của các hành tinh luôn thẳng đứng (0°)">⊥ Trục thẳng</button>
-      <button class="ctrl-btn active" id="btn-markers">📍 Điểm Analog</button>
-      <button class="ctrl-btn" id="btn-wireframe">▦ Lưới 3D</button>
-      <button class="ctrl-btn" id="btn-reset">⌖ Đặt lại góc nhìn</button>
-    </div>
+  <div class="right-column" id="right-settings-wrap">
+    <button class="ctrl-btn gps-menu-btn" id="btn-settings-menu" type="button" aria-expanded="false" aria-controls="settings-menu" title="Mở bảng Cài đặt &amp; Công cụ">⚙️ Cài đặt ▾</button>
 
-    <div class="right-sub-actions">
-      <button class="ctrl-btn gps-menu-btn" id="btn-finder-menu" type="button">🧪 Analog Finder (ML)</button>
-      <button class="ctrl-btn gps-menu-btn" id="btn-resources-menu" type="button">📚 Nguồn dữ liệu NASA</button>
-      <button class="ctrl-btn gps-menu-btn" id="btn-gps-menu" type="button">☰ Nhập 2 tọa độ GPS</button>
+    <div class="settings-drawer" id="settings-menu" hidden>
+      <div>
+        <div class="settings-section-title">Hiển thị &amp; Điều khiển 3D</div>
+        <div class="settings-grid">
+          <button class="ctrl-btn" id="btn-autorotate" type="button">⟳ Tự xoay</button>
+          <button class="ctrl-btn active" id="btn-upright-axis" type="button" title="Giữ trục Bắc–Nam của các hành tinh luôn thẳng đứng (0°)">⊥ Trục thẳng</button>
+          <button class="ctrl-btn active" id="btn-markers" type="button">📍 Điểm Analog</button>
+          <button class="ctrl-btn" id="btn-wireframe" type="button">▦ Lưới 3D</button>
+          <button class="ctrl-btn active" id="btn-toggle-left-panel" type="button" title="Ẩn / Hiện khung thông tin bên trái">◧ Bảng thông tin</button>
+          <button class="ctrl-btn" id="btn-reset" type="button">⌖ Đặt lại góc nhìn</button>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid rgba(255,255,255,0.09);padding-top:10px">
+        <div class="settings-section-title">Công cụ Khoa học &amp; Dữ liệu</div>
+        <div class="settings-stack">
+          <button class="ctrl-btn gps-menu-btn" id="btn-finder-menu" type="button"><span>🧪 Analog Finder (ML)</span><span style="color:#38bdf8">↗</span></button>
+          <button class="ctrl-btn gps-menu-btn" id="btn-resources-menu" type="button"><span>📚 Nguồn dữ liệu NASA</span><span style="color:#38bdf8">↗</span></button>
+          <button class="ctrl-btn gps-menu-btn" id="btn-gps-menu" type="button"><span>☰ Nhập 2 tọa độ GPS</span><span style="color:#38bdf8">↗</span></button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1836,7 +1951,7 @@
           materialType: 'phong',
           shininess: 20,
           specular: 0x334155,
-          atmosphere: { radius: 1.66, color: 0x38bdf8, intensity: 1.1 },
+          atmosphere: null,
           desc: 'Nguồn dữ liệu tham chiếu giúp tìm kiếm các địa điểm tương đồng (terrestrial analogs) cho căn cứ Mặt Trăng và Sao Hỏa.',
           stats: [
             { label: 'Bán kính', value: '6.371 km' },
@@ -2748,6 +2863,7 @@
         resourcesPopup.hidden = !nextOpen;
         btnResourcesMenu.classList.toggle('active', nextOpen);
         if (nextOpen) {
+          if (typeof toggleSettingsMenu === 'function') toggleSettingsMenu(false);
           bringWindowToFront(resourcesPopup);
           clampWindowToViewport(resourcesPopup);
         }
@@ -3336,11 +3452,62 @@
         recomputeFinderFromCSVs();
       });
 
+      const rightSettingsWrap = document.getElementById('right-settings-wrap');
+      const btnSettingsMenu = document.getElementById('btn-settings-menu');
+      const settingsMenu = document.getElementById('settings-menu');
+      const geNavEl = document.getElementById('ge-nav');
+
+      const leftColumnEl = document.getElementById('left-column');
+      const btnLeftHide = document.getElementById('btn-left-hide');
+      const btnToggleLeftPanel = document.getElementById('btn-toggle-left-panel');
+      let showLeftPanel = localStorage.getItem('nasa3d_show_left_panel') !== '0';
+
+      function toggleLeftPanel(forceShow) {
+        showLeftPanel = typeof forceShow === 'boolean' ? forceShow : !showLeftPanel;
+        if (leftColumnEl) leftColumnEl.classList.toggle('collapsed', !showLeftPanel);
+        if (btnToggleLeftPanel) btnToggleLeftPanel.classList.toggle('active', showLeftPanel);
+        localStorage.setItem('nasa3d_show_left_panel', showLeftPanel ? '1' : '0');
+      }
+
+      toggleLeftPanel(showLeftPanel);
+      if (btnLeftHide) btnLeftHide.addEventListener('click', () => toggleLeftPanel(false));
+      if (btnToggleLeftPanel) btnToggleLeftPanel.addEventListener('click', () => toggleLeftPanel());
+
+      function toggleSettingsMenu(forceOpen) {
+        const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : settingsMenu.hidden;
+        settingsMenu.hidden = !nextOpen;
+        btnSettingsMenu.classList.toggle('active', nextOpen);
+        btnSettingsMenu.setAttribute('aria-expanded', String(nextOpen));
+        btnSettingsMenu.textContent = nextOpen ? '⚙️ Cài đặt ▴' : '⚙️ Cài đặt ▾';
+        if (geNavEl) {
+          geNavEl.classList.toggle('is-hidden-by-settings', nextOpen);
+          geNavEl.setAttribute('aria-hidden', String(nextOpen));
+        }
+      }
+
+      btnSettingsMenu.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSettingsMenu();
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!settingsMenu.hidden && !rightSettingsWrap.contains(e.target)) {
+          toggleSettingsMenu(false);
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !settingsMenu.hidden) {
+          toggleSettingsMenu(false);
+        }
+      });
+
       function toggleFinderPopup(forceOpen) {
         const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : finderPopup.hidden;
         finderPopup.hidden = !nextOpen;
         btnFinderMenu.classList.toggle('active', nextOpen);
         if (nextOpen) {
+          toggleSettingsMenu(false);
           bringWindowToFront(finderPopup);
           clampWindowToViewport(finderPopup);
           ensureFinderDataLoaded();
@@ -3356,6 +3523,7 @@
         btnGpsMenu.classList.toggle('active', nextOpen);
         gpsError.hidden = true;
         if (nextOpen) {
+          toggleSettingsMenu(false);
           bringWindowToFront(gpsPopup);
           clampWindowToViewport(gpsPopup);
         }

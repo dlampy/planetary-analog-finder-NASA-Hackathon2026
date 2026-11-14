@@ -38,6 +38,7 @@ $mimeTypes = @{
   ".js"   = "application/javascript; charset=utf-8"
   ".css"  = "text/css; charset=utf-8"
   ".json" = "application/json; charset=utf-8"
+  ".csv"  = "text/csv; charset=utf-8"
   ".jpg"  = "image/jpeg"
   ".jpeg" = "image/jpeg"
   ".png"  = "image/png"
@@ -63,7 +64,7 @@ try {
 
     $ext = [System.IO.Path]::GetExtension($fullPath).ToLowerInvariant()
     $ctx.Response.ContentType = if ($mimeTypes.ContainsKey($ext)) { $mimeTypes[$ext] } else { "application/octet-stream" }
-    if ($ext -eq ".html" -or $ext -eq ".htm") {
+    if ($ext -in @(".html", ".htm", ".json", ".csv")) {
       $ctx.Response.AddHeader("Cache-Control", "no-store, no-cache, must-revalidate")
     }
     $bytes = [System.IO.File]::ReadAllBytes($fullPath)
