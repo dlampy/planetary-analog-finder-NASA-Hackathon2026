@@ -16,7 +16,20 @@ Sau khi bật GitHub Pages cho repository này, bạn có thể xem trực tiế
 - Hỗ trợ kéo chuột để xoay, cuộn để zoom, bật/tắt tự xoay, chế độ lưới 3D (*wireframe*) và đặt lại góc nhìn.
 - **Điều hướng kiểu Google Earth**: Vòng la bàn chữ `N` xoay/căn thẳng hướng Bắc (`0°`), cụm D-Pad 4 hướng, thanh trượt Zoom `+`/`-`, và nút **`⊥ Trục thẳng`** giữ trục Bắc–Nam thẳng đứng khi xoay.
 - **Bản đồ 2D siêu nét (Tile Map API)**: Click trực tiếp lên bất kỳ điểm nào trên hành tinh 3D để mở bản đồ 2D Leaflet (Esri World Imagery, OpenStreetMap, NASA GIBS MODIS, OpenPlanetaryMap LRO/Mars).
-- **Liên kết 2 tọa độ GPS (Model ML) & Cửa sổ kéo thả**: Pop-up nhận cặp tọa độ Trái Đất ↔ Mặt Trăng / Sao Hỏa để vẽ đường cung nối 3D giữa 2 hành tinh; các cửa sổ (`Map 2D`, `Liên kết 2 tọa độ GPS`, `Nguồn dữ liệu NASA`) đều giữ chuột trái vào thanh tiêu đề để kéo di chuyển.
+- **Liên kết 2 tọa độ GPS (Model ML) & Cửa sổ kéo thả**: Pop-up nhận cặp tọa độ Trái Đất ↔ Mặt Trăng / Sao Hỏa để vẽ đường cung nối 3D giữa 2 hành tinh; các cửa sổ (`Map 2D`, `Liên kết 2 tọa độ GPS`, `Nguồn dữ liệu NASA`, `Planetary Analog Finder`) đều giữ chuột trái vào thanh tiêu đề để kéo di chuyển.
+- **Planetary Analog Finder (`🧪 Analog Finder (ML)`)**: Xếp hạng Top 10 địa điểm Trái Đất tương đồng nhất theo từng mục tiêu (Mặt Trăng / Sao Hỏa) và mục đích nhiệm vụ (`Rover Mobility`, `Ground ISRU`, `Lava Tube Habitat`) bằng pipeline 2 tầng **Weighted BallTree KNN → Analog TOPSIS** trên 5 biến định lượng *(tạm bỏ `lithology_type` cho đến khi thống nhất bảng phân loại)*, kèm 5 thanh độ giống $S_i$, hộp cảnh báo **Where the Analogy Breaks Down**, sinh nội dung dự phòng tự động cho các cặp chưa có trong `data/site_tests.csv`, ghim Top-10 trên Trái Đất 3D và vẽ footprint vận hành (`1 km × 1 km`, `r = 5 km`, `r = 500 m`) trên Leaflet 2D.
+
+## Kiến trúc Dữ liệu & Thuật toán (`data/`, `engine/`, `app.py`)
+- **`data/earth_sites_1000.csv`**: Bảng địa điểm tương đồng Trái Đất (mở rộng dần tới ~1.000 điểm với 5 biến số: `slope_deg`, `mean_temp_c`, `temp_swing_c`, `aridity_ice_idx`, `has_subsurface_void`).
+- **`data/planetary_bases.csv`**: 8 mục tiêu căn cứ Mặt Trăng (Shackleton, Malapert, Marius Hills, Aristarchus, Mare Tranquillitatis) và Sao Hỏa (Jezero, Arcadia Planitia, Arsia Mons).
+- **`data/missions.csv`**: Trọng số theo mục đích nhiệm vụ và chế độ footprint (`circle_5km`, `square_1km`, `circle_500m`).
+- **`data/site_tests.csv`**: Giải thích khoa học thủ công *(nếu thiếu cặp `(site_id, mission_id)`, cả `app.py` và `index.html` đều tự sinh fallback cảnh báo dựa trên $S_i$ thấp nhất)*.
+- **`engine/matcher.py` & `app.py`**: Engine Python (`scikit-learn` `BallTree` + TOPSIS) để tiền tính `assets/data/analogs_results.json` hoặc chạy server `--serve`:
+  ```bash
+  pip install -r requirements.txt
+  python app.py --export-json
+  ```
+  *(Khi mở web qua `start_local.bat`, bạn cũng có thể bấm **`↻ Tính lại từ CSV`** ngay trong popup `🧪 Analog Finder (ML)` để tính lại trực tiếp bằng JS từ 4 file CSV mà không cần cài Python).*
 
 ## Nguồn dữ liệu mở chính thức (NASA & Cơ quan Đối tác)
 Danh sách các bộ dữ liệu được cung cấp trong thử thách và tích hợp tra cứu ngay trên nút **`📚 Nguồn dữ liệu NASA`** của website:

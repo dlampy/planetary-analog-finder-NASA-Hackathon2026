@@ -1,0 +1,17 @@
+site_id,parent_biome,micro_site_name,lat,lon,slope_deg,mean_temp_c,temp_swing_c,aridity_ice_idx,has_subsurface_void
+earth_pisgah,Mojave Desert,Pisgah Lava Tube,34.746,-116.375,4.2,21.5,19.4,0.92,1
+earth_yungay,Atacama Desert,Yungay Ridge,-24.083,-69.917,3.1,16.8,21.5,0.99,0
+earth_haughton,Canadian High Arctic,Haughton Impact Crater,75.370,-89.680,4.8,-16.2,11.8,0.91,0
+earth_don_juan,McMurdo Dry Valleys,Don Juan Pond Basin,-77.564,161.175,2.4,-22.5,10.2,0.97,0
+earth_university_valley,McMurdo Dry Valleys,University Valley Permafrost,-77.863,160.708,8.6,-23.8,9.6,0.98,0
+earth_black_point,San Francisco Volcanic Field,Black Point Lava Flow,35.696,-111.462,5.3,14.2,18.7,0.84,0
+earth_mauna_loa,Hawai'i Volcanic Shield,Mauna Loa High Lava Tubes,19.536,-155.576,9.4,8.9,14.3,0.58,1
+earth_askja,Iceland Highlands,Askja Basalt & Caldera,65.033,-16.750,7.8,-1.8,9.4,0.62,1
+earth_craters_moon,Snake River Plain,Craters of the Moon Caves,43.416,-113.516,4.5,6.4,17.9,0.78,1
+earth_rio_tinto,Iberian Pyrite Belt,Río Tinto Acidic Terrace,37.705,-6.554,6.7,17.3,14.1,0.67,0
+earth_danakil,Afar Depression,Dallol Hydrothermal Salt Flat,14.242,40.300,1.9,34.6,15.2,0.95,0
+earth_death_valley,Mojave Desert,Dumont & Badwater Basin,35.685,-116.767,2.8,24.8,20.6,0.96,0
+earth_wadi_rum,Arabian Desert,Wadi Rum Sandstone Valley,29.576,35.419,6.1,20.9,18.4,0.94,0
+earth_namib,Namib Desert,Gobabeb Gravel & Dune Edge,-23.561,15.041,3.9,21.2,19.8,0.97,0
+earth_svalbard,High Arctic Archipelago,Adventdalen Permafrost Slope,78.196,15.921,10.4,-5.6,8.2,0.88,0
+earth_zhamanshin,Kazakhstan Steppe,Zhamanshin Impact Crater,48.400,60.967,5.1,7.5,16.8,0.81,0

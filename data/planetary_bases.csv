@@ -1,0 +1,9 @@
+target_id,planet,target_name,lat,lon,slope_deg,mean_temp_c,temp_swing_c,aridity_ice_idx,has_subsurface_void
+moon_shackleton_rim,Moon,Shackleton Crater Rim,-89.54,0.00,11.2,-118.0,65.0,0.98,0
+moon_malapert_massif,Moon,Malapert Massif Peak,-86.00,-2.00,9.4,-92.0,78.0,0.93,0
+moon_marius_hills_pit,Moon,Marius Hills Skylight Pit,14.09,-56.77,6.5,-24.0,185.0,0.99,1
+moon_aristarchus,Moon,Aristarchus Plateau,23.70,-47.40,7.8,-22.0,195.0,0.99,0
+moon_tranquillitatis_pit,Moon,Mare Tranquillitatis Pit,8.33,33.22,3.8,-20.0,190.0,0.99,1
+mars_jezero_crater,Mars,Jezero Crater Delta,18.38,77.58,4.6,-63.0,62.0,0.97,0
+mars_arcadia_planitia,Mars,Arcadia Planitia Ice Sheet,46.70,-172.00,1.8,-74.0,48.0,0.99,0
+mars_arsia_mons_pit,Mars,Arsia Mons Lava Pit,-6.00,-121.00,8.9,-58.0,70.0,0.98,1

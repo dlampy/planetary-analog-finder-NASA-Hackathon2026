@@ -269,6 +269,271 @@
       line-height: 1.4;
     }
 
+    /* Cửa sổ Planetary Analog Finder (KNN + TOPSIS + Fallback site_tests) */
+    .finder-popup {
+      position: fixed;
+      top: 112px;
+      right: 104px;
+      z-index: 24;
+      pointer-events: auto;
+      width: min(455px, calc(100vw - 44px));
+      max-height: min(610px, calc(100vh - 135px));
+      background: rgba(9, 14, 28, 0.95);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(56, 189, 248, 0.44);
+      border-radius: 16px;
+      box-shadow: 0 22px 54px rgba(0, 0, 0, 0.78);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: popIn 0.18s ease-out;
+    }
+
+    .finder-popup[hidden] {
+      display: none;
+    }
+
+    .finder-popup-header {
+      padding: 11px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(15, 23, 42, 0.88);
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .window-dragging .finder-popup-header {
+      cursor: grabbing;
+    }
+
+    .finder-body {
+      padding: 12px 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .finder-body::-webkit-scrollbar {
+      width: 5px;
+    }
+    .finder-body::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.3);
+      border-radius: 99px;
+    }
+
+    .finder-mission-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .finder-mission-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: #cbd5e1;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 7px 6px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .finder-mission-btn:hover {
+      border-color: rgba(56, 189, 248, 0.6);
+      color: #fff;
+    }
+
+    .finder-mission-btn.active {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: #38bdf8;
+      color: #fff;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+    }
+
+    .finder-weights-strip {
+      font-size: 10.5px;
+      color: #94a3b8;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 9px;
+      padding: 6px 9px;
+      line-height: 1.45;
+    }
+
+    .finder-rank-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-height: 170px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .finder-rank-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    .finder-rank-list::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.3);
+      border-radius: 99px;
+    }
+
+    .finder-rank-item {
+      width: 100%;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 7px 10px;
+      color: #f8fafc;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.18s ease;
+    }
+
+    .finder-rank-item:hover,
+    .finder-rank-item.active {
+      background: rgba(56, 189, 248, 0.16);
+      border-color: #38bdf8;
+    }
+
+    .finder-rank-left {
+      min-width: 0;
+    }
+
+    .finder-rank-name {
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .finder-rank-sub {
+      font-size: 10.5px;
+      color: #94a3b8;
+    }
+
+    .finder-rank-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .finder-score-pill {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.14);
+      padding: 2px 7px;
+      border-radius: 99px;
+    }
+
+    .finder-badge {
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      color: #6ee7b7;
+      background: rgba(16, 185, 129, 0.12);
+    }
+
+    .finder-badge.fallback {
+      border-color: rgba(251, 191, 36, 0.45);
+      color: #fde68a;
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .finder-detail-card {
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 10px 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .finder-si-row {
+      display: grid;
+      grid-template-columns: 116px 1fr 44px;
+      align-items: center;
+      gap: 8px;
+      font-size: 10.5px;
+    }
+
+    .finder-si-bar-bg {
+      height: 7px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .finder-si-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #0284c7, #38bdf8);
+    }
+
+    .finder-si-bar-fill.weak {
+      background: linear-gradient(90deg, #e11d48, #fb7185);
+    }
+
+    .finder-info-line {
+      font-size: 11px;
+      line-height: 1.45;
+      color: #cbd5e1;
+    }
+
+    .finder-limit-box {
+      background: rgba(244, 63, 94, 0.1);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      border-radius: 9px;
+      padding: 7px 9px;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #fecdd3;
+    }
+
+    .finder-footer {
+      padding: 8px 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(15, 23, 42, 0.88);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 10.5px;
+      color: #94a3b8;
+    }
+
+    .finder-recalc-btn {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      color: #e2e8f0;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    .finder-recalc-btn:hover {
+      border-color: #38bdf8;
+      color: #fff;
+    }
+
     /* Pop-up nhận 2 tọa độ GPS (Floating Draggable Window) */
     .gps-popup {
       position: fixed;
@@ -1204,7 +1469,8 @@
         display: none;
       }
       .gps-popup,
-      .resources-popup {
+      .resources-popup,
+      .finder-popup {
         right: 10px;
         top: 88px;
         max-width: calc(100vw - 20px);
@@ -1294,6 +1560,7 @@
     </div>
 
     <div class="right-sub-actions">
+      <button class="ctrl-btn gps-menu-btn" id="btn-finder-menu" type="button">🧪 Analog Finder (ML)</button>
       <button class="ctrl-btn gps-menu-btn" id="btn-resources-menu" type="button">📚 Nguồn dữ liệu NASA</button>
       <button class="ctrl-btn gps-menu-btn" id="btn-gps-menu" type="button">☰ Nhập 2 tọa độ GPS</button>
     </div>
@@ -1398,6 +1665,48 @@
           </a>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="finder-popup" id="finder-popup" hidden>
+    <div class="finder-popup-header" title="Nhấn giữ chuột trái để di chuyển cửa sổ">
+      <span class="gps-popup-title"><span class="drag-grip" aria-hidden="true">⋮⋮</span>🧪 Planetary Analog Finder (KNN → TOPSIS)</span>
+      <button class="gps-close-x" id="btn-finder-close" type="button" title="Đóng">✕</button>
+    </div>
+    <div class="finder-body">
+      <div class="gps-field" style="margin-bottom:0">
+        <label class="gps-field-label" for="finder-target-select">
+          <span>1. Chọn Mục tiêu (Mặt Trăng / Sao Hỏa)</span>
+          <span id="finder-target-badge" style="color:#38bdf8">Moon</span>
+        </label>
+        <select class="gps-select" id="finder-target-select" style="margin-bottom:0"></select>
+      </div>
+
+      <div>
+        <div class="gps-field-label">
+          <span>2. Mục đích Nhiệm vụ (Mission Purpose)</span>
+          <span style="color:#94a3b8;font-size:10px">Tạm bỏ lithology_type</span>
+        </div>
+        <div class="finder-mission-tabs" id="finder-mission-tabs"></div>
+      </div>
+
+      <div class="finder-weights-strip" id="finder-weights-strip">Đang tải dữ liệu...</div>
+
+      <div>
+        <div class="gps-field-label">
+          <span>Top 10 Địa điểm Trái Đất phù hợp nhất</span>
+          <span id="finder-count-label" style="color:#38bdf8">0 điểm</span>
+        </div>
+        <div class="finder-rank-list" id="finder-rank-list"></div>
+      </div>
+
+      <div class="finder-detail-card" id="finder-detail-card">
+        <div style="font-size:11.5px;color:#94a3b8">Chọn một địa điểm trong Top 10 để xem 5 thanh độ giống Sᵢ, công nghệ thử nghiệm và vẽ 3D/2D.</div>
+      </div>
+    </div>
+    <div class="finder-footer">
+      <span id="finder-source-status">Nguồn: precomputed JSON</span>
+      <button class="finder-recalc-btn" id="btn-finder-csv" type="button" title="Đọc lại 4 file data/*.csv và tự tính KNN + TOPSIS trực tiếp">↻ Tính lại từ CSV</button>
     </div>
   </div>
 
@@ -2004,6 +2313,40 @@
         dualLinkState.targetPin = null;
       }
 
+      function clearTopAnalogPins() {
+        const earthSurface = planetModels.earth && planetModels.earth.getObjectByName('surface');
+        if (!earthSurface) return;
+        const old = earthSurface.getObjectByName('topAnalogs');
+        if (old) earthSurface.remove(old);
+      }
+
+      function renderTopAnalogPins(rankedList, selectedSiteId) {
+        clearTopAnalogPins();
+        const earthSurface = planetModels.earth && planetModels.earth.getObjectByName('surface');
+        if (!earthSurface || !Array.isArray(rankedList) || !rankedList.length) return;
+
+        const group = new THREE.Group();
+        group.name = 'topAnalogs';
+        const dotGeo = new THREE.SphereGeometry(0.028, 14, 14);
+        const topDotGeo = new THREE.SphereGeometry(0.038, 16, 16);
+
+        rankedList.forEach(item => {
+          const isSelected = item.site_id === selectedSiteId;
+          const isTop3 = item.rank <= 3;
+          const color = isSelected ? 0x38bdf8 : (isTop3 ? 0xfbbf24 : 0x22d3ee);
+          const mat = new THREE.MeshBasicMaterial({ color });
+          const mesh = new THREE.Mesh(isSelected || isTop3 ? topDotGeo : dotGeo, mat);
+          mesh.position.copy(latLonToVector3(item.lat, item.lon, RADIUS + (isSelected ? 0.032 : 0.02)));
+          mesh.userData.site = {
+            name: `#${item.rank} ${item.micro_site_name}`,
+            note: `TOPSIS ${item.topsis_score.toFixed(1)}% · ${item.parent_biome}`
+          };
+          group.add(mesh);
+        });
+
+        earthSurface.add(group);
+      }
+
       function rotateSurfaceToFront(planetKey, lat, lon, yawOffset = 0) {
         const group = planetModels[planetKey];
         if (!group) return;
@@ -2413,6 +2756,600 @@
       btnResourcesMenu.addEventListener('click', () => toggleResourcesPopup());
       document.getElementById('btn-resources-close').addEventListener('click', () => toggleResourcesPopup(false));
 
+      // ==========================================
+      // 5D. PLANETARY ANALOG FINDER (KNN -> TOPSIS + FALLBACK)
+      // ==========================================
+      const FINDER_FEATURES = [
+        { col: 'slope_deg', label: 'Độ dốc (Slope)', unit: '°', bounds: [0, 45], weightCol: 'w_slope' },
+        { col: 'mean_temp_c', label: 'Nhiệt độ TB', unit: '°C', bounds: [-30, 45], weightCol: 'w_temp' },
+        { col: 'temp_swing_c', label: 'Biên độ nhiệt ngày', unit: '°C', bounds: [0, 40], weightCol: 'w_temp_swing' },
+        { col: 'aridity_ice_idx', label: 'Độ khô hạn / Băng', unit: '', bounds: [0, 1], weightCol: 'w_aridity_ice' },
+        { col: 'has_subsurface_void', label: 'Hang / Hốc ngầm', unit: '', bounds: [0, 1], weightCol: 'w_void' }
+      ];
+
+      const btnFinderMenu = document.getElementById('btn-finder-menu');
+      const finderPopup = document.getElementById('finder-popup');
+      const finderTargetSelect = document.getElementById('finder-target-select');
+      const finderTargetBadge = document.getElementById('finder-target-badge');
+      const finderMissionTabs = document.getElementById('finder-mission-tabs');
+      const finderWeightsStrip = document.getElementById('finder-weights-strip');
+      const finderCountLabel = document.getElementById('finder-count-label');
+      const finderRankList = document.getElementById('finder-rank-list');
+      const finderDetailCard = document.getElementById('finder-detail-card');
+      const finderSourceStatus = document.getElementById('finder-source-status');
+      const btnFinderCsv = document.getElementById('btn-finder-csv');
+
+      makeWindowDraggable(finderPopup, finderPopup.querySelector('.finder-popup-header'));
+
+      const finderState = {
+        data: null,
+        selectedTargetId: null,
+        selectedMissionId: null,
+        selectedSiteId: null,
+        loading: false
+      };
+
+      function escapeHtml(str) {
+        return String(str ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function parseCsvText(text) {
+        const clean = text.replace(/^\uFEFF/, '');
+        const rows = [];
+        let row = [];
+        let cell = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < clean.length; i++) {
+          const ch = clean[i];
+          if (inQuotes) {
+            if (ch === '"') {
+              if (clean[i + 1] === '"') {
+                cell += '"';
+                i++;
+              } else {
+                inQuotes = false;
+              }
+            } else {
+              cell += ch;
+            }
+          } else if (ch === '"') {
+            inQuotes = true;
+          } else if (ch === ',') {
+            row.push(cell);
+            cell = '';
+          } else if (ch === '\r' || ch === '\n') {
+            if (ch === '\r' && clean[i + 1] === '\n') i++;
+            row.push(cell);
+            if (row.some(c => c.trim() !== '')) rows.push(row);
+            row = [];
+            cell = '';
+          } else {
+            cell += ch;
+          }
+        }
+        if (cell.length > 0 || row.length > 0) {
+          row.push(cell);
+          if (row.some(c => c.trim() !== '')) rows.push(row);
+        }
+        if (!rows.length) return [];
+        const headers = rows[0].map(h => h.trim());
+        return rows.slice(1).map(cols => {
+          const obj = {};
+          headers.forEach((h, idx) => {
+            obj[h] = (cols[idx] ?? '').trim();
+          });
+          return obj;
+        });
+      }
+
+      function computeWeightsJS(missionRow) {
+        const raw = {};
+        let total = 0;
+        FINDER_FEATURES.forEach(f => {
+          const val = Math.max(0, parseFloat(missionRow[f.weightCol]) || 0);
+          raw[f.col] = val;
+          total += val;
+        });
+        const weights = {};
+        const fallbackW = 1 / FINDER_FEATURES.length;
+        FINDER_FEATURES.forEach(f => {
+          weights[f.col] = total > 0 ? +(raw[f.col] / total).toFixed(6) : fallbackW;
+        });
+        return weights;
+      }
+
+      function resolveSiteTestFallbackJS(earthItem, targetObj, missionObj, testExactMap, testSiteMap) {
+        const exact = testExactMap[`${earthItem.site_id}|${missionObj.mission_id}`];
+        if (exact) {
+          return {
+            is_fallback_note: false,
+            technology_to_test: exact.technology_to_test,
+            why_suitable: exact.why_suitable,
+            analogy_limitations: exact.analogy_limitations,
+            source_url: exact.source_url
+          };
+        }
+
+        const siteOnly = testSiteMap[earthItem.site_id];
+        if (siteOnly) {
+          return {
+            is_fallback_note: true,
+            technology_to_test: missionObj.technology_to_test,
+            why_suitable: `Ghi chú nền (${earthItem.micro_site_name}): ${siteOnly.why_suitable}`,
+            analogy_limitations: siteOnly.analogy_limitations,
+            source_url: siteOnly.source_url
+          };
+        }
+
+        const si = earthItem.similarity_Si;
+        const topDesc = earthItem.strongest_factors
+          .map(col => {
+            const meta = FINDER_FEATURES.find(f => f.col === col);
+            return `${meta ? meta.label : col} (${si[col]}%)`;
+          })
+          .join(' và ');
+        const whyParts = [
+          `Thuộc vùng ${earthItem.parent_biome} (${earthItem.micro_site_name}), tương đồng nổi bật với ${targetObj.target_name} ở ${topDesc}.`
+        ];
+        if ((earthItem.features.has_subsurface_void || 0) === 1) {
+          whyParts.push('Có cấu trúc hang/ống ngầm hỗ trợ thử nghiệm khảo sát và che chắn bức xạ.');
+        }
+
+        const weakMeta = FINDER_FEATURES.find(f => f.col === earthItem.weakest_factor) || FINDER_FEATURES[0];
+        const planetLimits = targetObj.planet === 'moon'
+          ? 'Trọng lực Trái Đất (1g) cao gấp ~6 lần Mặt Trăng (0.165g); có khí quyển 1 atm và từ trường chắn bức xạ thay vì chân không và bụi regolith sắc nhọn.'
+          : 'Trọng lực Trái Đất (1g) cao gấp ~2.6 lần Sao Hỏa (0.38g); áp suất 1 atm giàu O₂/N₂ khác hẳn khí quyển 95% CO₂ loãng và bức xạ bề mặt Sao Hỏa.';
+
+        const limitParts = [
+          `Yếu tố lệch nhiều nhất: ${weakMeta.label} (chỉ đạt ${si[earthItem.weakest_factor]}% tương đồng).`,
+          planetLimits
+        ];
+        if (earthItem.out_of_earth_bounds && earthItem.out_of_earth_bounds.length) {
+          const oobStr = earthItem.out_of_earth_bounds
+            .map(o => `${o.label} (${o.target_value}${o.unit})`)
+            .join(', ');
+          limitParts.push(`Cảnh báo ngoài ngưỡng Trái Đất tại ${targetObj.target_name}: ${oobStr}.`);
+        }
+
+        let tech = missionObj.technology_to_test;
+        if ((earthItem.features.has_subsurface_void || 0) === 0 && missionObj.mission_id === 'lava_tube_habitat') {
+          tech += ' (Lưu ý: điểm này không có hang ngầm tự nhiên, chỉ thử phần địa hình bề mặt/thông tin vô tuyến).';
+        }
+
+        return {
+          is_fallback_note: true,
+          technology_to_test: tech,
+          why_suitable: whyParts.join(' '),
+          analogy_limitations: limitParts.join(' '),
+          source_url: targetObj.planet === 'moon'
+            ? 'https://pds-geosciences.wustl.edu/missions/lro/'
+            : 'https://pds.nasa.gov/'
+        };
+      }
+
+      function runKnnTopsisJS(targetObj, missionObj, earthSites, testExactMap, testSiteMap) {
+        const weights = computeWeightsJS(missionObj);
+        const spans = {};
+        FINDER_FEATURES.forEach(f => { spans[f.col] = f.bounds[1] - f.bounds[0]; });
+
+        // Stage 1: Weighted Euclidean KNN on clipped [0,1] features (top 25)
+        const targetClipped = {};
+        const targetUnclipped = {};
+        const outOfBoundsFlags = [];
+        FINDER_FEATURES.forEach(f => {
+          const tVal = targetObj.features[f.col];
+          const [lo, hi] = f.bounds;
+          targetUnclipped[f.col] = (tVal - lo) / spans[f.col];
+          targetClipped[f.col] = THREE.MathUtils.clamp(tVal, lo, hi) - lo;
+          targetClipped[f.col] /= spans[f.col];
+          if (tVal < lo || tVal > hi) {
+            outOfBoundsFlags.push({
+              feature: f.col,
+              label: f.label,
+              target_value: +tVal.toFixed(2),
+              earth_range: [lo, hi],
+              unit: f.unit
+            });
+          }
+        });
+
+        const withKnn = earthSites.map(site => {
+          const earthClipped = {};
+          let distSq = 0;
+          FINDER_FEATURES.forEach(f => {
+            const [lo, hi] = f.bounds;
+            const eNorm = (THREE.MathUtils.clamp(site[f.col], lo, hi) - lo) / spans[f.col];
+            earthClipped[f.col] = eNorm;
+            const d = (eNorm - targetClipped[f.col]) * Math.sqrt(weights[f.col]);
+            distSq += d * d;
+          });
+          return { site, earthClipped, knnDist: Math.sqrt(distSq) };
+        });
+
+        withKnn.sort((a, b) => a.knnDist - b.knnDist || a.site.site_id.localeCompare(b.site.site_id));
+        const candidates = withKnn.slice(0, Math.min(25, withKnn.length));
+        if (!candidates.length) return [];
+
+        // Stage 2: Vector-normalized Analog TOPSIS on candidate deviations from unclipped target
+        const diffRows = candidates.map(c => {
+          const row = {};
+          FINDER_FEATURES.forEach(f => {
+            row[f.col] = Math.abs(c.earthClipped[f.col] - targetUnclipped[f.col]);
+          });
+          return row;
+        });
+
+        const colNorms = {};
+        const idealWorst = {};
+        FINDER_FEATURES.forEach(f => {
+          let sumSq = 0;
+          diffRows.forEach(r => { sumSq += r[f.col] * r[f.col]; });
+          const norm = Math.sqrt(sumSq);
+          colNorms[f.col] = norm < 1e-9 ? 1.0 : norm;
+          idealWorst[f.col] = 0;
+        });
+
+        const weightedMatrix = diffRows.map(r => {
+          const wRow = {};
+          FINDER_FEATURES.forEach(f => {
+            const val = (r[f.col] / colNorms[f.col]) * weights[f.col];
+            wRow[f.col] = val;
+            if (val > idealWorst[f.col]) idealWorst[f.col] = val;
+          });
+          return wRow;
+        });
+
+        const scored = candidates.map((c, idx) => {
+          const wRow = weightedMatrix[idx];
+          let distBestSq = 0;
+          let distWorstSq = 0;
+          const siMap = {};
+          const earthFeatures = {};
+
+          FINDER_FEATURES.forEach(f => {
+            const v = wRow[f.col];
+            distBestSq += v * v;
+            distWorstSq += (v - idealWorst[f.col]) * (v - idealWorst[f.col]);
+            const si = THREE.MathUtils.clamp(1.0 - Math.abs(targetUnclipped[f.col] - c.earthClipped[f.col]), 0, 1);
+            siMap[f.col] = +(si * 100).toFixed(1);
+            earthFeatures[f.col] = +Number(c.site[f.col]).toFixed(3);
+          });
+
+          const distBest = Math.sqrt(distBestSq);
+          const distWorst = Math.sqrt(distWorstSq);
+          const denom = distBest + distWorst;
+          const closeness = denom < 1e-9 ? 1.0 : distWorst / denom;
+
+          let weakestCol = FINDER_FEATURES[0].col;
+          FINDER_FEATURES.forEach(f => {
+            if (siMap[f.col] < siMap[weakestCol]) weakestCol = f.col;
+          });
+          const strongestCols = [...FINDER_FEATURES]
+            .sort((a, b) => siMap[b.col] - siMap[a.col])
+            .slice(0, 2)
+            .map(f => f.col);
+
+          const item = {
+            site_id: c.site.site_id,
+            parent_biome: c.site.parent_biome,
+            micro_site_name: c.site.micro_site_name,
+            lat: +Number(c.site.lat).toFixed(4),
+            lon: +Number(c.site.lon).toFixed(4),
+            topsis_score: +(closeness * 100).toFixed(1),
+            features: earthFeatures,
+            similarity_Si: siMap,
+            weakest_factor: weakestCol,
+            strongest_factors: strongestCols,
+            out_of_earth_bounds: outOfBoundsFlags,
+            footprint_mode: missionObj.footprint_mode
+          };
+          Object.assign(item, resolveSiteTestFallbackJS(item, targetObj, missionObj, testExactMap, testSiteMap));
+          return item;
+        });
+
+        scored.sort((a, b) => b.topsis_score - a.topsis_score || a.site_id.localeCompare(b.site_id));
+        return scored.slice(0, 10).map((item, idx) => ({ rank: idx + 1, ...item }));
+      }
+
+      async function recomputeFinderFromCSVs() {
+        finderSourceStatus.textContent = 'Đang đọc 4 file CSV và tính KNN → TOPSIS...';
+        btnFinderCsv.disabled = true;
+        try {
+          const [earthRes, basesRes, missionsRes, testsRes] = await Promise.all([
+            fetch('./data/earth_sites_1000.csv', { cache: 'no-store' }),
+            fetch('./data/planetary_bases.csv', { cache: 'no-store' }),
+            fetch('./data/missions.csv', { cache: 'no-store' }),
+            fetch('./data/site_tests.csv', { cache: 'no-store' })
+          ]);
+          if (!earthRes.ok || !basesRes.ok || !missionsRes.ok || !testsRes.ok) {
+            throw new Error('Không thể fetch đủ 4 file CSV trong ./data/');
+          }
+
+          const [earthText, basesText, missionsText, testsText] = await Promise.all([
+            earthRes.text(),
+            basesRes.text(),
+            missionsRes.text(),
+            testsRes.text()
+          ]);
+
+          const earthSites = parseCsvText(earthText).map(r => ({
+            site_id: r.site_id,
+            parent_biome: r.parent_biome,
+            micro_site_name: r.micro_site_name,
+            lat: parseFloat(r.lat),
+            lon: parseFloat(r.lon),
+            slope_deg: parseFloat(r.slope_deg),
+            mean_temp_c: parseFloat(r.mean_temp_c),
+            temp_swing_c: parseFloat(r.temp_swing_c),
+            aridity_ice_idx: parseFloat(r.aridity_ice_idx),
+            has_subsurface_void: parseInt(r.has_subsurface_void, 10) || 0
+          }));
+
+          const targets = parseCsvText(basesText).map(r => ({
+            target_id: r.target_id,
+            planet: (r.planet || 'moon').toLowerCase(),
+            target_name: r.target_name,
+            lat: parseFloat(r.lat),
+            lon: parseFloat(r.lon),
+            features: {
+              slope_deg: parseFloat(r.slope_deg),
+              mean_temp_c: parseFloat(r.mean_temp_c),
+              temp_swing_c: parseFloat(r.temp_swing_c),
+              aridity_ice_idx: parseFloat(r.aridity_ice_idx),
+              has_subsurface_void: parseInt(r.has_subsurface_void, 10) || 0
+            }
+          }));
+
+          const missions = parseCsvText(missionsText).map(r => {
+            const weights = computeWeightsJS(r);
+            return {
+              mission_id: r.mission_id,
+              mission_type: r.mission_type,
+              technology_to_test: r.technology_to_test || '',
+              footprint_mode: r.footprint_mode || 'square_1km',
+              w_slope: parseFloat(r.w_slope) || 0,
+              w_temp: parseFloat(r.w_temp) || 0,
+              w_temp_swing: parseFloat(r.w_temp_swing) || 0,
+              w_aridity_ice: parseFloat(r.w_aridity_ice) || 0,
+              w_void: parseFloat(r.w_void) || 0,
+              weights
+            };
+          });
+
+          const testExactMap = {};
+          const testSiteMap = {};
+          parseCsvText(testsText).forEach(r => {
+            if (r.site_id && r.mission_id) {
+              testExactMap[`${r.site_id}|${r.mission_id}`] = r;
+              if (!testSiteMap[r.site_id]) testSiteMap[r.site_id] = r;
+            }
+          });
+
+          const results = {};
+          targets.forEach(t => {
+            results[t.target_id] = {};
+            missions.forEach(m => {
+              results[t.target_id][m.mission_id] = runKnnTopsisJS(t, m, earthSites, testExactMap, testSiteMap);
+            });
+          });
+
+          finderState.data = {
+            meta: {
+              earth_site_count: earthSites.length,
+              active_features: FINDER_FEATURES.map(f => f.col),
+              excluded_features: ['lithology_type']
+            },
+            targets,
+            missions,
+            results
+          };
+          finderSourceStatus.textContent = `Nguồn: Live JS CSV (${earthSites.length} điểm Earth)`;
+          renderFinderUI(true);
+        } catch (err) {
+          console.warn(err);
+          finderSourceStatus.textContent = 'Lỗi đọc CSV (hãy chạy start_local.bat hoặc xem JSON)';
+        } finally {
+          btnFinderCsv.disabled = false;
+        }
+      }
+
+      async function ensureFinderDataLoaded() {
+        if (finderState.data || finderState.loading) return;
+        finderState.loading = true;
+        finderSourceStatus.textContent = 'Đang tải analogs_results.json...';
+        try {
+          const res = await fetch('./assets/data/analogs_results.json', { cache: 'no-store' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const json = await res.json();
+          finderState.data = json;
+          const cnt = json.meta && json.meta.earth_site_count ? json.meta.earth_site_count : '?';
+          finderSourceStatus.textContent = `Nguồn: precomputed JSON (${cnt} điểm Earth)`;
+          renderFinderUI(true);
+        } catch (err) {
+          finderState.loading = false;
+          await recomputeFinderFromCSVs();
+          return;
+        }
+        finderState.loading = false;
+      }
+
+      function selectAnalogRankItem(item, targetObj, missionObj, shouldDrawMap = true) {
+        if (!item || !targetObj || !missionObj) return;
+        finderState.selectedSiteId = item.site_id;
+
+        finderRankList.querySelectorAll('.finder-rank-item').forEach(el => {
+          el.classList.toggle('active', el.dataset.siteId === item.site_id);
+        });
+
+        const barsHtml = FINDER_FEATURES.map(f => {
+          const pct = item.similarity_Si && typeof item.similarity_Si[f.col] === 'number'
+            ? Math.round(item.similarity_Si[f.col])
+            : 0;
+          const isWeak = item.weakest_factor === f.col;
+          const barColor = isWeak ? '#f59e0b' : (pct >= 75 ? '#34d399' : '#38bdf8');
+          const eVal = item.features && item.features[f.col] !== undefined ? item.features[f.col] : '—';
+          const tVal = targetObj.features && targetObj.features[f.col] !== undefined ? targetObj.features[f.col] : '—';
+          return `
+            <div class="finder-bar-row">
+              <span class="finder-bar-label">${escapeHtml(f.label)}${isWeak ? ' ⚠' : ''}</span>
+              <div class="finder-bar-track"><div class="finder-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+              <span class="finder-bar-val">${pct}% (${eVal}${f.unit} / ${tVal}${f.unit})</span>
+            </div>
+          `;
+        }).join('');
+
+        const footprintLabelMap = {
+          square_1km: 'Ô 1 km × 1 km (ISRU)',
+          circle_5km: 'Vòng tròn r = 5 km (Rover)',
+          circle_500m: 'Vòng tròn r = 500 m (Habitat)'
+        };
+        const fpLabel = footprintLabelMap[missionObj.footprint_mode] || missionObj.footprint_mode;
+        const isFallback = Boolean(item.is_fallback_note);
+
+        finderDetailCard.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
+            <strong style="font-size:12.5px;color:#e2e8f0">#${item.rank} · ${escapeHtml(item.micro_site_name)}</strong>
+            <span class="finder-badge ${isFallback ? 'fallback' : 'manual'}">${isFallback ? 'Auto-Fallback' : 'Verified CSV'}</span>
+          </div>
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:6px">
+            Tọa độ: ${Number(item.lat).toFixed(3)}°, ${Number(item.lon).toFixed(3)}° · Footprint: <strong style="color:#7dd3fc">${escapeHtml(fpLabel)}</strong>
+          </div>
+          ${barsHtml}
+          <div style="margin-top:8px;font-size:11.5px;color:#cbd5e1;line-height:1.45">
+            <strong style="color:#38bdf8">Công nghệ thử nghiệm:</strong> ${escapeHtml(item.technology_to_test)}
+          </div>
+          <div style="margin-top:5px;font-size:11.5px;color:#cbd5e1;line-height:1.45">
+            <strong style="color:#34d399">Lý do phù hợp:</strong> ${escapeHtml(item.why_suitable)}
+          </div>
+          <div class="finder-warn-box">
+            <strong>⚠ Điểm tương đồng bị phá vỡ (Where the Analogy Breaks Down):</strong>
+            ${escapeHtml(item.analogy_limitations)}
+          </div>
+          <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center;font-size:11px">
+            <a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;text-decoration:none">Tài liệu tham khảo ↗</a>
+            <button type="button" class="finder-recalc-btn" id="btn-finder-focus-link">🛰 Vẽ nối 3D &amp; 2D Footprint</button>
+          </div>
+        `;
+
+        const btnFocus = document.getElementById('btn-finder-focus-link');
+        const triggerVisualSync = () => {
+          const rankList = finderState.data.results[targetObj.target_id][missionObj.mission_id] || [];
+          renderTopAnalogPins(rankList, item.site_id);
+          applyAnalogLink({
+            earthLat: item.lat,
+            earthLon: item.lon,
+            targetPlanet: targetObj.planet.toLowerCase(),
+            targetLat: targetObj.lat,
+            targetLon: targetObj.lon
+          });
+          open2DMapAt('earth', item.lat, item.lon, `#${item.rank} ${item.micro_site_name}`, missionObj.footprint_mode);
+        };
+        if (btnFocus) btnFocus.addEventListener('click', triggerVisualSync);
+
+        if (shouldDrawMap) {
+          triggerVisualSync();
+        }
+      }
+
+      function renderFinderUI(autoFocusTop1 = false) {
+        const data = finderState.data;
+        if (!data || !data.targets || !data.missions) return;
+
+        if (!finderState.selectedTargetId || !data.targets.some(t => t.target_id === finderState.selectedTargetId)) {
+          finderState.selectedTargetId = data.targets[0].target_id;
+        }
+        if (!finderState.selectedMissionId || !data.missions.some(m => m.mission_id === finderState.selectedMissionId)) {
+          finderState.selectedMissionId = data.missions[0].mission_id;
+        }
+
+        finderTargetSelect.innerHTML = data.targets.map(t => `
+          <option value="${escapeHtml(t.target_id)}" ${t.target_id === finderState.selectedTargetId ? 'selected' : ''}>
+            ${t.planet === 'moon' ? '🌕' : '🔴'} ${escapeHtml(t.target_name)} (${Number(t.lat).toFixed(2)}°, ${Number(t.lon).toFixed(2)}°)
+          </option>
+        `).join('');
+
+        const targetObj = data.targets.find(t => t.target_id === finderState.selectedTargetId);
+        const tFeat = targetObj ? targetObj.features : {};
+        finderTargetBadge.textContent = targetObj ? `${targetObj.planet.toUpperCase()} · ${tFeat.slope_deg}° · void=${tFeat.has_subsurface_void}` : '';
+
+        finderMissionTabs.innerHTML = data.missions.map(m => `
+          <button type="button" class="finder-mission-tab ${m.mission_id === finderState.selectedMissionId ? 'active' : ''}" data-mission="${escapeHtml(m.mission_id)}">
+            ${escapeHtml(m.mission_type)}
+          </button>
+        `).join('');
+
+        finderMissionTabs.querySelectorAll('.finder-mission-tab').forEach(btn => {
+          btn.addEventListener('click', () => {
+            finderState.selectedMissionId = btn.dataset.mission;
+            finderState.selectedSiteId = null;
+            renderFinderUI(true);
+          });
+        });
+
+        const missionObj = data.missions.find(m => m.mission_id === finderState.selectedMissionId);
+        const w = (missionObj && missionObj.weights) || {};
+        finderWeightsStrip.textContent = `Trọng số: Slope ${(w.slope_deg * 100 || 0).toFixed(0)}% · Temp ${(w.mean_temp_c * 100 || 0).toFixed(0)}% · Swing ${(w.temp_swing_c * 100 || 0).toFixed(0)}% · Ice/Aridity ${(w.aridity_ice_idx * 100 || 0).toFixed(0)}% · Void ${(w.has_subsurface_void * 100 || 0).toFixed(0)}%`;
+
+        const ranked = (data.results && data.results[targetObj.target_id] && data.results[targetObj.target_id][missionObj.mission_id]) || [];
+        finderCountLabel.textContent = `${ranked.length} điểm`;
+
+        finderRankList.innerHTML = ranked.map(item => `
+          <div class="finder-rank-item ${item.site_id === finderState.selectedSiteId ? 'active' : ''}" data-site-id="${escapeHtml(item.site_id)}">
+            <div class="finder-rank-num">#${item.rank}</div>
+            <div>
+              <div class="finder-rank-name">${escapeHtml(item.micro_site_name)}</div>
+              <div class="finder-rank-biome">
+                ${escapeHtml(item.parent_biome)}
+                <span class="finder-badge ${item.is_fallback_note ? 'fallback' : 'manual'}">${item.is_fallback_note ? 'Fallback' : 'CSV'}</span>
+              </div>
+            </div>
+            <div class="finder-score-pill">${item.topsis_score.toFixed(1)}%</div>
+          </div>
+        `).join('');
+
+        finderRankList.querySelectorAll('.finder-rank-item').forEach(el => {
+          el.addEventListener('click', () => {
+            const item = ranked.find(r => r.site_id === el.dataset.siteId);
+            selectAnalogRankItem(item, targetObj, missionObj, true);
+          });
+        });
+
+        if (ranked.length) {
+          const picked = ranked.find(r => r.site_id === finderState.selectedSiteId) || ranked[0];
+          renderTopAnalogPins(ranked, picked.site_id);
+          selectAnalogRankItem(picked, targetObj, missionObj, autoFocusTop1);
+        }
+      }
+
+      finderTargetSelect.addEventListener('change', () => {
+        finderState.selectedTargetId = finderTargetSelect.value;
+        finderState.selectedSiteId = null;
+        renderFinderUI(true);
+      });
+
+      btnFinderCsv.addEventListener('click', () => {
+        recomputeFinderFromCSVs();
+      });
+
+      function toggleFinderPopup(forceOpen) {
+        const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : finderPopup.hidden;
+        finderPopup.hidden = !nextOpen;
+        btnFinderMenu.classList.toggle('active', nextOpen);
+        if (nextOpen) {
+          bringWindowToFront(finderPopup);
+          clampWindowToViewport(finderPopup);
+          ensureFinderDataLoaded();
+        }
+      }
+
+      btnFinderMenu.addEventListener('click', () => toggleFinderPopup());
+      document.getElementById('btn-finder-close').addEventListener('click', () => toggleFinderPopup(false));
+
       function toggleGpsPopup(forceOpen) {
         const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : gpsPopup.hidden;
         gpsPopup.hidden = !nextOpen;
@@ -2525,6 +3462,8 @@
           }
           const customPin = surface.getObjectByName('customPin');
           if (customPin) pickTargets.push(...customPin.children);
+          const topAnalogs = surface.getObjectByName('topAnalogs');
+          if (topAnalogs) pickTargets.push(...topAnalogs.children);
         });
 
         if (!pickTargets.length) {
@@ -2621,6 +3560,7 @@
       let leafletMap = null;
       let leafletTileLayer = null;
       let leafletMarker = null;
+      let leafletFootprintLayer = null;
       const map2dState = {
         planetKey: 'earth',
         layerId: 'esri',
@@ -2714,7 +3654,7 @@
         }
       }
 
-      function open2DMapAt(planetKey, lat, lon, label) {
+      function open2DMapAt(planetKey, lat, lon, label, footprintMode = null) {
         if (typeof L === 'undefined') return;
         const clampedLat = THREE.MathUtils.clamp(lat, -85.05, 85.05);
         const planetChanged = map2dState.planetKey !== planetKey || !leafletTileLayer;
@@ -2753,10 +3693,46 @@
           leafletMarker.setLatLng([clampedLat, lon]);
         }
 
-        const targetZoom = Math.max(leafletMap.getZoom() || 0, targetLayer.defaultZoom);
+        if (leafletFootprintLayer) {
+          leafletMap.removeLayer(leafletFootprintLayer);
+          leafletFootprintLayer = null;
+        }
+
+        let desiredZoom = Math.max(leafletMap.getZoom() || 0, targetLayer.defaultZoom);
+        if (planetKey === 'earth' && footprintMode) {
+          if (footprintMode === 'square_1km') {
+            const dLat = 500 / 111320;
+            const cosLat = Math.max(0.2, Math.cos(clampedLat * Math.PI / 180));
+            const dLon = 500 / (111320 * cosLat);
+            leafletFootprintLayer = L.rectangle(
+              [[clampedLat - dLat, lon - dLon], [clampedLat + dLat, lon + dLon]],
+              { color: '#38bdf8', weight: 2, fillColor: '#38bdf8', fillOpacity: 0.16, dashArray: '5,4' }
+            ).addTo(leafletMap);
+            desiredZoom = 13;
+          } else if (footprintMode === 'circle_5km') {
+            leafletFootprintLayer = L.circle([clampedLat, lon], {
+              radius: 5000,
+              color: '#34d399',
+              weight: 2,
+              fillColor: '#34d399',
+              fillOpacity: 0.12
+            }).addTo(leafletMap);
+            desiredZoom = 11;
+          } else if (footprintMode === 'circle_500m') {
+            leafletFootprintLayer = L.circle([clampedLat, lon], {
+              radius: 500,
+              color: '#f59e0b',
+              weight: 2,
+              fillColor: '#f59e0b',
+              fillOpacity: 0.18
+            }).addTo(leafletMap);
+            desiredZoom = 14;
+          }
+        }
+
         setTimeout(() => {
           leafletMap.invalidateSize();
-          leafletMap.setView([clampedLat, lon], targetZoom);
+          leafletMap.setView([clampedLat, lon], desiredZoom);
         }, 30);
       }
 
@@ -3133,6 +4109,7 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         clampWindowToViewport(gpsPopup);
         clampWindowToViewport(resourcesPopup);
+        clampWindowToViewport(finderPopup);
         clampWindowToViewport(map2dPanel);
       });
 
