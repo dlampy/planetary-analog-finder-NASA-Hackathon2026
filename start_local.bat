@@ -63,6 +63,9 @@ try {
 
     $ext = [System.IO.Path]::GetExtension($fullPath).ToLowerInvariant()
     $ctx.Response.ContentType = if ($mimeTypes.ContainsKey($ext)) { $mimeTypes[$ext] } else { "application/octet-stream" }
+    if ($ext -eq ".html" -or $ext -eq ".htm") {
+      $ctx.Response.AddHeader("Cache-Control", "no-store, no-cache, must-revalidate")
+    }
     $bytes = [System.IO.File]::ReadAllBytes($fullPath)
     $ctx.Response.ContentLength64 = $bytes.Length
     $ctx.Response.OutputStream.Write($bytes, 0, $bytes.Length)
