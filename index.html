@@ -150,6 +150,125 @@
       box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
     }
 
+    .right-sub-actions {
+      pointer-events: auto;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    /* Cửa sổ nguồn dữ liệu NASA / CSA / ESA / JAXA */
+    .resources-popup {
+      position: fixed;
+      top: 112px;
+      right: 104px;
+      z-index: 23;
+      pointer-events: auto;
+      width: min(410px, calc(100vw - 44px));
+      max-height: min(520px, calc(100vh - 150px));
+      background: rgba(9, 14, 28, 0.94);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(56, 189, 248, 0.38);
+      border-radius: 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.72);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: popIn 0.18s ease-out;
+    }
+
+    .resources-popup[hidden] {
+      display: none;
+    }
+
+    .resources-popup-header {
+      padding: 11px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(15, 23, 42, 0.85);
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .window-dragging .resources-popup-header {
+      cursor: grabbing;
+    }
+
+    .resources-body {
+      padding: 12px 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .resources-body::-webkit-scrollbar {
+      width: 5px;
+    }
+    .resources-body::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.3);
+      border-radius: 99px;
+    }
+
+    .res-group-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #38bdf8;
+      margin-bottom: 6px;
+    }
+
+    .res-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .res-link-card {
+      display: block;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 8px 10px;
+      transition: all 0.2s ease;
+    }
+
+    .res-link-card:hover {
+      background: rgba(56, 189, 248, 0.14);
+      border-color: rgba(56, 189, 248, 0.6);
+    }
+
+    .res-link-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #f8fafc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .res-link-name span:last-child {
+      font-size: 10.5px;
+      color: #38bdf8;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .res-link-desc {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+
     /* Pop-up nhận 2 tọa độ GPS (Floating Draggable Window) */
     .gps-popup {
       position: fixed;
@@ -1084,6 +1203,12 @@
       .ge-nav {
         display: none;
       }
+      .gps-popup,
+      .resources-popup {
+        right: 10px;
+        top: 88px;
+        max-width: calc(100vw - 20px);
+      }
       .map2d-panel {
         right: 10px;
         bottom: 104px;
@@ -1168,7 +1293,10 @@
       <button class="ctrl-btn" id="btn-reset">⌖ Đặt lại góc nhìn</button>
     </div>
 
-    <button class="ctrl-btn gps-menu-btn" id="btn-gps-menu" type="button">☰ Nhập 2 tọa độ GPS</button>
+    <div class="right-sub-actions">
+      <button class="ctrl-btn gps-menu-btn" id="btn-resources-menu" type="button">📚 Nguồn dữ liệu NASA</button>
+      <button class="ctrl-btn gps-menu-btn" id="btn-gps-menu" type="button">☰ Nhập 2 tọa độ GPS</button>
+    </div>
   </div>
 
   <!-- Cụm điều hướng kiểu Google Earth (La bàn N + D-Pad + Thanh Zoom) -->
@@ -1200,6 +1328,76 @@
         <div class="ge-zoom-thumb" id="ge-zoom-thumb"></div>
       </div>
       <button class="ge-zoom-btn" id="ge-zoom-out" data-ge-action="zoom-out" type="button" title="Thu nhỏ (-)">−</button>
+    </div>
+  </div>
+
+  <div class="resources-popup" id="resources-popup" hidden>
+    <div class="resources-popup-header" title="Nhấn giữ chuột trái để di chuyển cửa sổ">
+      <span class="gps-popup-title"><span class="drag-grip" aria-hidden="true">⋮⋮</span>📚 Nguồn Dữ Liệu Mở (NASA &amp; Đối tác)</span>
+      <button class="gps-close-x" id="btn-resources-close" type="button" title="Đóng">✕</button>
+    </div>
+    <div class="resources-body">
+      <div>
+        <div class="res-group-title">NASA · Dữ liệu Trái Đất (Earth)</div>
+        <div class="res-list">
+          <a class="res-link-card" href="https://search.earthdata.nasa.gov/" target="_blank" rel="noopener noreferrer">
+            <div class="res-link-name"><span>NASA Earthdata Search</span><span>Mở ↗</span></div>
+            <div class="res-link-desc">Cổng chính tìm kiếm và tải bộ dữ liệu quan sát Khoa học Trái Đất của NASA (DEM, nhiệt độ, độ ẩm, băng tuyết...).</div>
+          </a>
+          <a class="res-link-card" href="https://worldview.earthdata.nasa.gov/index.html" target="_blank" rel="noopener noreferrer">
+            <div class="res-link-name"><span>NASA Worldview (GIBS)</span><span>Mở ↗</span></div>
+            <div class="res-link-desc">Trình xem ảnh vệ tinh và các lớp môi trường NASA theo thời gian thực (tích hợp trực tiếp lớp NASA GIBS MODIS trong bản đồ 2D).</div>
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <div class="res-group-title">NASA · Mặt Trăng &amp; Sao Hỏa (Moon &amp; Mars)</div>
+        <div class="res-list">
+          <a class="res-link-card" href="https://pds.nasa.gov/" target="_blank" rel="noopener noreferrer">
+            <div class="res-link-name"><span>NASA Planetary Data System (PDS)</span><span>Mở ↗</span></div>
+            <div class="res-link-desc">Kho lưu trữ khoa học hành tinh dài hạn từ tàu quỹ đạo, tàu đổ bộ và rover (ảnh, địa chất, khí quyển, bản đồ).</div>
+          </a>
+          <a class="res-link-card" href="https://pds-geosciences.wustl.edu/missions/lro/" target="_blank" rel="noopener noreferrer">
+            <div class="res-link-name"><span>NASA Lunar Reconnaissance Orbiter (LRO)</span><span>Mở ↗</span></div>
+            <div class="res-link-desc">Quan sát Mặt Trăng từ LROC, LOLA (địa hình laser), Diviner, LEND và radar Mini-RF.</div>
+          </a>
+          <a class="res-link-card" href="https://pds-geosciences.wustl.edu/missions/lro/diviner.htm" target="_blank" rel="noopener noreferrer">
+            <div class="res-link-name"><span>NASA LRO Diviner Lunar Data</span><span>Mở ↗</span></div>
+            <div class="res-link-desc">Bản đồ nhiệt độ bề mặt Mặt Trăng và sản phẩm cực/tài nguyên dùng đối chiếu vùng cực lạnh &amp; băng trên Trái Đất.</div>
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <div class="res-group-title">Cơ quan Vũ trụ Đối tác (CSA · ESA · JAXA)</div>
+        <div class="res-list">
+          <a class="res-link-card" href="https://donnees-data.asc-csa.gc.ca/en/dataset/rcm" target="_blank" rel="noopener noreferrer">
+            <div class="res-link-name"><span>CSA · RADARSAT Constellation Mission (RCM)</span><span>Mở ↗</span></div>
+            <div class="res-link-desc">Dữ liệu radar quan sát Trái Đất ngày/đêm xuyên mây của Cơ quan Vũ trụ Canada.</div>
+          </a>
+          <a class="res-link-card" href="https://donnees-data.asc-csa.gc.ca/en/dataset/radarsat1" target="_blank" rel="noopener noreferrer">
+            <div class="res-link-name"><span>CSA · RADARSAT 1 Open Archive</span><span>Mở ↗</span></div>
+            <div class="res-link-desc">Kho ảnh radar khẩu độ tổng hợp (SAR) mở xuyên mây, khói và sương mù.</div>
+          </a>
+          <a class="res-link-card" href="https://github.com/asc-csa/Synthetic_Aperture_Radar_Tutorial" target="_blank" rel="noopener noreferrer">
+            <div class="res-link-name"><span>CSA · SAR Python &amp; QGIS Tutorial</span><span>Mở ↗</span></div>
+            <div class="res-link-desc">Hướng dẫn Python &amp; QGIS truy cập và xử lý ảnh SAR cho huấn luyện mô hình ML.</div>
+          </a>
+          <a class="res-link-card" href="https://dataspace.copernicus.eu/" target="_blank" rel="noopener noreferrer">
+            <div class="res-link-name"><span>ESA · Copernicus Data Space Ecosystem</span><span>Mở ↗</span></div>
+            <div class="res-link-desc">Dữ liệu vệ tinh Sentinel miễn phí (đất liền, đại dương, khí quyển) của Cơ quan Vũ trụ Châu Âu.</div>
+          </a>
+          <a class="res-link-card" href="https://opensciencedata.esa.int/" target="_blank" rel="noopener noreferrer">
+            <div class="res-link-name"><span>ESA · Open Science Catalog</span><span>Mở ↗</span></div>
+            <div class="res-link-desc">Danh mục các bộ dữ liệu, sản phẩm và quy trình khoa học Trái Đất mở của ESA.</div>
+          </a>
+          <a class="res-link-card" href="https://gportal.jaxa.jp/gpr/index/index" target="_blank" rel="noopener noreferrer">
+            <div class="res-link-name"><span>JAXA · G-Portal</span><span>Mở ↗</span></div>
+            <div class="res-link-desc">Sản phẩm quan sát Trái Đất của JAXA theo lượng mưa, tuyết phủ, thảm thực vật...</div>
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2198,6 +2396,23 @@
 
       makeWindowDraggable(gpsPopup, gpsPopup.querySelector('.gps-popup-header'));
 
+      const btnResourcesMenu = document.getElementById('btn-resources-menu');
+      const resourcesPopup = document.getElementById('resources-popup');
+      makeWindowDraggable(resourcesPopup, resourcesPopup.querySelector('.resources-popup-header'));
+
+      function toggleResourcesPopup(forceOpen) {
+        const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : resourcesPopup.hidden;
+        resourcesPopup.hidden = !nextOpen;
+        btnResourcesMenu.classList.toggle('active', nextOpen);
+        if (nextOpen) {
+          bringWindowToFront(resourcesPopup);
+          clampWindowToViewport(resourcesPopup);
+        }
+      }
+
+      btnResourcesMenu.addEventListener('click', () => toggleResourcesPopup());
+      document.getElementById('btn-resources-close').addEventListener('click', () => toggleResourcesPopup(false));
+
       function toggleGpsPopup(forceOpen) {
         const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : gpsPopup.hidden;
         gpsPopup.hidden = !nextOpen;
@@ -2917,6 +3132,7 @@
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
         clampWindowToViewport(gpsPopup);
+        clampWindowToViewport(resourcesPopup);
         clampWindowToViewport(map2dPanel);
       });
 

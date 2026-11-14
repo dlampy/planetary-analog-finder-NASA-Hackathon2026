@@ -14,6 +14,27 @@ Sau khi bật GitHub Pages cho repository này, bạn có thể xem trực tiế
   3. **Sao Hỏa (Mars):** Địa hình oxit sắt, đá bazan sẫm, hẻm núi, miệng hố va chạm, chỏm băng hai cực và khí quyển bụi mỏng.
 - Click vào từng ô ở thanh chọn bên dưới (hoặc nhấn phím `1`, `2`, `3`) để chuyển đổi mô hình 3D kèm bảng thông số hành tinh.
 - Hỗ trợ kéo chuột để xoay, cuộn để zoom, bật/tắt tự xoay, chế độ lưới 3D (*wireframe*) và đặt lại góc nhìn.
+- **Điều hướng kiểu Google Earth**: Vòng la bàn chữ `N` xoay/căn thẳng hướng Bắc (`0°`), cụm D-Pad 4 hướng, thanh trượt Zoom `+`/`-`, và nút **`⊥ Trục thẳng`** giữ trục Bắc–Nam thẳng đứng khi xoay.
+- **Bản đồ 2D siêu nét (Tile Map API)**: Click trực tiếp lên bất kỳ điểm nào trên hành tinh 3D để mở bản đồ 2D Leaflet (Esri World Imagery, OpenStreetMap, NASA GIBS MODIS, OpenPlanetaryMap LRO/Mars).
+- **Liên kết 2 tọa độ GPS (Model ML) & Cửa sổ kéo thả**: Pop-up nhận cặp tọa độ Trái Đất ↔ Mặt Trăng / Sao Hỏa để vẽ đường cung nối 3D giữa 2 hành tinh; các cửa sổ (`Map 2D`, `Liên kết 2 tọa độ GPS`, `Nguồn dữ liệu NASA`) đều giữ chuột trái vào thanh tiêu đề để kéo di chuyển.
+
+## Nguồn dữ liệu mở chính thức (NASA & Cơ quan Đối tác)
+Danh sách các bộ dữ liệu được cung cấp trong thử thách và tích hợp tra cứu ngay trên nút **`📚 Nguồn dữ liệu NASA`** của website:
+
+### NASA (Earth · Moon · Mars)
+- **NASA Earthdata Search**: https://search.earthdata.nasa.gov/
+- **NASA Worldview (GIBS)**: https://worldview.earthdata.nasa.gov/index.html
+- **NASA Planetary Data System (PDS)**: https://pds.nasa.gov/
+- **NASA Lunar Reconnaissance Orbiter (LRO — LROC / LOLA / Diviner / LEND / Mini-RF)**: https://pds-geosciences.wustl.edu/missions/lro/
+- **NASA LRO Diviner Lunar Data**: https://pds-geosciences.wustl.edu/missions/lro/diviner.htm
+
+### Cơ quan Vũ trụ Đối tác (CSA · ESA · JAXA)
+- **CSA · RADARSAT Constellation Mission (RCM) - Data**: https://donnees-data.asc-csa.gc.ca/en/dataset/rcm
+- **CSA · RADARSAT 1 - Data**: https://donnees-data.asc-csa.gc.ca/en/dataset/radarsat1
+- **CSA · Synthetic Aperture Radar (SAR) Python Tutorial**: https://github.com/asc-csa/Synthetic_Aperture_Radar_Tutorial
+- **ESA · Copernicus Data Space Ecosystem**: https://dataspace.copernicus.eu/
+- **ESA · Open Science Catalog**: https://opensciencedata.esa.int/
+- **JAXA · G-Portal**: https://gportal.jaxa.jp/gpr/index/index
 
 ## Bản đồ vệ tinh thực tế (`assets/textures/`)
 Để mô hình 3D hiển thị đúng hình dạng lục địa Trái Đất, biển/hố Mặt Trăng và địa hình Sao Hỏa thực tế (thay vì mô phỏng dự phòng), hãy tải ảnh bản đồ chuẩn **Equirectangular (tỉ lệ 2:1)** và đặt vào thư mục `assets/textures/`:
