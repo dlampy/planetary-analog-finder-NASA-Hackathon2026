@@ -1,0 +1,2299 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NASA Space Apps 2026 · 3D Earth, Moon & Mars</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --bg-space: #030712;
+      --panel-bg: rgba(10, 15, 30, 0.8);
+      --panel-border: rgba(148, 163, 184, 0.22);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-earth: #38bdf8;
+      --accent-moon: #e2e8f0;
+      --accent-mars: #fb7185;
+      --active-accent: #38bdf8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      background: radial-gradient(circle at 50% 45%, #0b132b 0%, #030712 75%);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* Left Column: Brand + Info Panel (không bao giờ đè nhau) */
+    .left-column {
+      position: fixed;
+      top: 18px;
+      left: 22px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 330px;
+      max-height: calc(100vh - 125px);
+      pointer-events: none;
+    }
+
+    .brand {
+      pointer-events: auto;
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 13px 16px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+      flex-shrink: 0;
+    }
+
+    .brand-badge {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #38bdf8;
+      margin-bottom: 4px;
+    }
+
+    .brand h1 {
+      font-size: 16.5px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .brand p {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+
+    /* Right Column: Controls Bar + GPS Menu + Pop-up */
+    .right-column {
+      position: fixed;
+      top: 18px;
+      right: 22px;
+      z-index: 15;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .controls-bar {
+      pointer-events: auto;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .ctrl-btn {
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border);
+      color: var(--text-main);
+      padding: 9px 13px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ctrl-btn:hover {
+      border-color: rgba(255, 255, 255, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .ctrl-btn.active {
+      border-color: var(--active-accent);
+      background: rgba(56, 189, 248, 0.16);
+    }
+
+    .gps-menu-btn {
+      pointer-events: auto;
+      border-color: rgba(56, 189, 248, 0.45);
+      background: rgba(14, 24, 48, 0.88);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .gps-menu-btn.active {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.24);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+    }
+
+    /* Pop-up nhận 2 tọa độ GPS */
+    .gps-popup {
+      pointer-events: auto;
+      width: 310px;
+      background: rgba(9, 14, 28, 0.92);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 16px;
+      padding: 15px 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+      animation: popIn 0.18s ease-out;
+    }
+
+    .gps-popup[hidden] {
+      display: none;
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .gps-popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .gps-popup-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .gps-close-x {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 15px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    .gps-close-x:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .gps-field {
+      margin-bottom: 10px;
+    }
+
+    .gps-field-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 5px;
+    }
+
+    .gps-select,
+    .gps-input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 10px;
+      padding: 8px 10px;
+      color: #f8fafc;
+      font-size: 12.5px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .gps-select {
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+
+    .gps-select:focus,
+    .gps-input:focus {
+      border-color: #38bdf8;
+    }
+
+    .gps-presets {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .gps-preset-chip {
+      font-size: 10.5px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      border-radius: 99px;
+      padding: 3px 9px;
+      cursor: pointer;
+    }
+
+    .gps-preset-chip:hover {
+      background: rgba(56, 189, 248, 0.18);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+
+    .gps-error {
+      font-size: 11px;
+      color: #fda4af;
+      margin-bottom: 8px;
+      line-height: 1.35;
+    }
+
+    .gps-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .gps-submit-btn {
+      flex: 1;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      border: none;
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 9px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: filter 0.2s;
+    }
+
+    .gps-submit-btn:hover {
+      filter: brightness(1.12);
+    }
+
+    .gps-clear-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 9px 11px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .gps-clear-btn:hover {
+      background: rgba(244, 63, 94, 0.18);
+      border-color: rgba(244, 63, 94, 0.45);
+      color: #fecdd3;
+    }
+
+    /* Banner trạng thái Dual Link */
+    .dual-link-banner {
+      position: fixed;
+      bottom: 106px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 12;
+      background: rgba(9, 14, 28, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-radius: 99px;
+      padding: 7px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: #e2e8f0;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+      white-space: nowrap;
+    }
+
+    .dual-link-banner[hidden] {
+      display: none;
+    }
+
+    .dual-exit-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: 99px;
+      cursor: pointer;
+    }
+
+    .dual-exit-btn:hover {
+      background: rgba(244, 63, 94, 0.35);
+    }
+
+    /* Info Panel */
+    .info-panel {
+      pointer-events: auto;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border);
+      border-radius: 18px;
+      padding: 15px 17px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .info-panel::-webkit-scrollbar {
+      width: 5px;
+    }
+    .info-panel::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.3);
+      border-radius: 99px;
+    }
+
+    .info-tag {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--active-accent);
+      margin-bottom: 5px;
+    }
+
+    .info-panel h2 {
+      font-size: 21px;
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
+
+    .info-desc {
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: #cbd5e1;
+      margin-bottom: 12px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 11px;
+    }
+
+    .stat-item {
+      background: rgba(255, 255, 255, 0.035);
+      padding: 7px 9px;
+      border-radius: 10px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      display: block;
+    }
+
+    .stat-value {
+      font-size: 12.5px;
+      font-weight: 700;
+      margin-top: 2px;
+      display: block;
+    }
+
+    /* Analog Sites List */
+    .analogs-section {
+      margin-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 10px;
+    }
+
+    .analogs-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 7px;
+    }
+
+    .analog-item {
+      width: 100%;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 10px;
+      padding: 7px 9px;
+      margin-bottom: 6px;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .analog-item:hover,
+    .analog-item.selected {
+      background: rgba(56, 189, 248, 0.14);
+      border-color: var(--active-accent);
+    }
+
+    .analog-name {
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .analog-coords {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--active-accent);
+    }
+
+    .analog-note {
+      font-size: 11px;
+      color: #cbd5e1;
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+
+    .texture-status {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      line-height: 1.45;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(15, 23, 42, 0.65);
+      color: #cbd5e1;
+    }
+
+    .texture-status.real {
+      border-color: rgba(52, 211, 153, 0.4);
+      background: rgba(16, 185, 129, 0.12);
+      color: #a7f3d0;
+    }
+
+    .texture-status.fallback {
+      border-color: rgba(251, 191, 36, 0.35);
+      background: rgba(245, 158, 11, 0.1);
+      color: #fde68a;
+    }
+
+    .local-upload-btn {
+      margin-top: 8px;
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px dashed rgba(56, 189, 248, 0.5);
+      background: rgba(56, 189, 248, 0.1);
+      color: #e0f2fe;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .local-upload-btn:hover {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: #38bdf8;
+    }
+
+    /* 3 Planet Selector Boxes */
+    .selector-dock {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(175px, 220px));
+      gap: 12px;
+      padding: 10px;
+      background: rgba(8, 13, 26, 0.7);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--panel-border);
+      border-radius: 22px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    }
+
+    .planet-card {
+      position: relative;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 13px 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      color: var(--text-main);
+      transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .planet-card:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-3px);
+    }
+
+    .planet-card.active[data-planet="earth"] {
+      border-color: var(--accent-earth);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(15, 23, 42, 0.78));
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.28);
+    }
+
+    .planet-card.active[data-planet="moon"] {
+      border-color: var(--accent-moon);
+      background: linear-gradient(135deg, rgba(226, 232, 240, 0.2), rgba(15, 23, 42, 0.78));
+      box-shadow: 0 0 24px rgba(226, 232, 240, 0.22);
+    }
+
+    .planet-card.active[data-planet="mars"] {
+      border-color: var(--accent-mars);
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.25), rgba(15, 23, 42, 0.78));
+      box-shadow: 0 0 24px rgba(249, 115, 22, 0.3);
+    }
+
+    .orb-preview {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: inset -8px -8px 14px rgba(0, 0, 0, 0.65);
+    }
+
+    .orb-earth {
+      background: radial-gradient(circle at 30% 30%, #60a5fa, #1d4ed8 55%, #065f46 75%, #0f172a);
+      box-shadow: inset -8px -8px 14px rgba(0, 0, 0, 0.65), 0 0 12px rgba(56, 189, 248, 0.45);
+    }
+
+    .orb-moon {
+      background: radial-gradient(circle at 32% 30%, #f1f5f9, #94a3b8 55%, #475569 90%);
+      box-shadow: inset -8px -8px 14px rgba(0, 0, 0, 0.7), 0 0 10px rgba(226, 232, 240, 0.3);
+    }
+
+    .orb-mars {
+      background: radial-gradient(circle at 30% 30%, #fdba74, #ea580c 52%, #7c2d12 90%);
+      box-shadow: inset -8px -8px 14px rgba(0, 0, 0, 0.65), 0 0 12px rgba(249, 115, 22, 0.45);
+    }
+
+    .card-text .title {
+      font-size: 15px;
+      font-weight: 700;
+      display: block;
+    }
+
+    .card-text .sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: block;
+      margin-top: 2px;
+    }
+
+    .key-hint {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    /* Tooltip on 3D Marker Hover */
+    #marker-tooltip {
+      position: fixed;
+      z-index: 20;
+      pointer-events: none;
+      background: rgba(8, 13, 26, 0.92);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 12px;
+      color: #f8fafc;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+      display: none;
+      max-width: 220px;
+    }
+
+    /* Loading / Status Overlay */
+    #status-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #030712;
+      color: #e2e8f0;
+      gap: 12px;
+      transition: opacity 0.35s ease;
+    }
+
+    #status-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(56, 189, 248, 0.2);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* 2D High-Res Tile Map Panel */
+    .map2d-panel {
+      position: fixed;
+      right: 22px;
+      bottom: 20px;
+      z-index: 16;
+      width: 360px;
+      height: 310px;
+      background: rgba(9, 14, 28, 0.94);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(56, 189, 248, 0.42);
+      border-radius: 18px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.72);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width 0.25s ease, height 0.25s ease;
+    }
+
+    .map2d-panel[hidden] {
+      display: none;
+    }
+
+    .map2d-panel.expanded {
+      width: min(680px, calc(100vw - 44px));
+      height: min(520px, calc(100vh - 150px));
+    }
+
+    .map2d-header {
+      padding: 9px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    .map2d-title-wrap {
+      min-width: 0;
+    }
+
+    .map2d-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #f8fafc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .map2d-coords {
+      font-size: 11px;
+      color: #38bdf8;
+      font-weight: 600;
+    }
+
+    .map2d-hbtns {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .map2d-icon-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: #e2e8f0;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    .map2d-icon-btn:hover {
+      background: rgba(56, 189, 248, 0.28);
+    }
+
+    .map2d-layers {
+      display: flex;
+      gap: 6px;
+      padding: 6px 10px;
+      background: rgba(15, 23, 42, 0.6);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      flex-wrap: wrap;
+    }
+
+    .map2d-layer-chip {
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 99px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: rgba(255, 255, 255, 0.04);
+      color: #cbd5e1;
+      cursor: pointer;
+    }
+
+    .map2d-layer-chip.active {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+
+    #map2d-canvas {
+      flex: 1;
+      width: 100%;
+      background: #020617;
+    }
+
+    .map2d-footer {
+      padding: 7px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    .map2d-source {
+      font-size: 10px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .map2d-send-btn {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      border: none;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 9px;
+      border-radius: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .map2d-send-btn:hover {
+      filter: brightness(1.12);
+    }
+
+    @media (max-width: 860px) {
+      .map2d-panel {
+        right: 10px;
+        bottom: 104px;
+        width: calc(100vw - 20px);
+        height: 240px;
+      }
+      .info-panel {
+        display: none;
+      }
+      .left-column {
+        top: 10px;
+        left: 10px;
+        width: auto;
+        right: 10px;
+      }
+      .right-column {
+        top: auto;
+        bottom: 102px;
+        right: 10px;
+      }
+      .dual-link-banner {
+        display: none;
+      }
+      .selector-dock {
+        width: calc(100vw - 20px);
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        padding: 8px;
+        bottom: 12px;
+      }
+      .planet-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 10px 6px;
+        gap: 7px;
+      }
+      .key-hint {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="status-overlay">
+    <div class="spinner"></div>
+    <div id="status-text">Đang tải dữ liệu bản đồ 3D...</div>
+  </div>
+
+  <div id="canvas-container"></div>
+  <div id="marker-tooltip"></div>
+
+  <div class="left-column">
+    <div class="brand">
+      <span class="brand-badge">NASA Space Apps 2026 · 3D Explorer</span>
+      <h1>Mô hình 3D Trái Đất, Mặt Trăng &amp; Sao Hỏa</h1>
+      <p>Kéo để xoay · Cuộn để zoom · Click 3 ô bên dưới (hoặc phím 1, 2, 3)</p>
+    </div>
+
+    <aside class="info-panel" id="info-panel">
+      <div class="info-tag" id="info-tag"></div>
+      <h2 id="info-title">Trái Đất</h2>
+      <p class="info-desc" id="info-desc"></p>
+      <div class="stats-grid" id="stats-grid"></div>
+
+      <div class="analogs-section">
+        <div class="analogs-title" id="analogs-title">Địa điểm trọng tâm</div>
+        <div id="analogs-list"></div>
+      </div>
+
+      <div class="texture-status" id="texture-status">Đang kiểm tra dữ liệu bản đồ...</div>
+      <button class="local-upload-btn" id="btn-pick-texture" type="button">📂 Chọn ảnh bản đồ từ máy</button>
+      <input type="file" id="local-texture-input" accept="image/*" hidden />
+    </aside>
+  </div>
+
+  <div class="right-column">
+    <div class="controls-bar">
+      <button class="ctrl-btn active" id="btn-autorotate">⟳ Tự xoay</button>
+      <button class="ctrl-btn active" id="btn-markers">📍 Điểm Analog</button>
+      <button class="ctrl-btn" id="btn-wireframe">▦ Lưới 3D</button>
+      <button class="ctrl-btn" id="btn-reset">⌖ Đặt lại góc nhìn</button>
+    </div>
+
+    <button class="ctrl-btn gps-menu-btn" id="btn-gps-menu" type="button">☰ Nhập 2 tọa độ GPS</button>
+
+    <div class="gps-popup" id="gps-popup" hidden>
+      <div class="gps-popup-header">
+        <span class="gps-popup-title">🔗 Liên kết 2 tọa độ GPS (Model ML)</span>
+        <button class="gps-close-x" id="btn-gps-close" type="button" title="Đóng">✕</button>
+      </div>
+
+      <div class="gps-field">
+        <label class="gps-field-label" for="gps-earth-input">
+          <span>1. Tọa độ Trái Đất (Lat, Lon)</span>
+          <span style="color:#38bdf8">Earth</span>
+        </label>
+        <input class="gps-input" id="gps-earth-input" type="text" placeholder="vd: -24.5, -69.2" value="-24.5, -69.2" />
+      </div>
+
+      <div class="gps-field">
+        <label class="gps-field-label" for="gps-target-input">
+          <span>2. Tọa độ Mục tiêu (Lat, Lon)</span>
+          <span style="color:#fb7185">Moon / Mars</span>
+        </label>
+        <select class="gps-select" id="gps-target-planet">
+          <option value="mars">Sao Hỏa (Mars)</option>
+          <option value="moon">Mặt Trăng (Moon)</option>
+        </select>
+        <input class="gps-input" id="gps-target-input" type="text" placeholder="vd: 18.38, 77.58" value="18.38, 77.58" />
+      </div>
+
+      <div class="gps-presets">
+        <button class="gps-preset-chip" type="button" data-earth="-24.5, -69.2" data-planet="mars" data-dest="18.38, 77.58">Atacama ↔ Jezero</button>
+        <button class="gps-preset-chip" type="button" data-earth="75.37, -89.68" data-planet="moon" data-dest="-89.54, 0.0">Haughton ↔ Shackleton</button>
+      </div>
+
+      <div class="gps-error" id="gps-error" hidden></div>
+
+      <div class="gps-actions">
+        <button class="gps-submit-btn" id="btn-gps-link" type="button">🔗 Liên kết &amp; Vẽ 3D</button>
+        <button class="gps-clear-btn" id="btn-gps-clear" type="button">Xóa</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dual-link-banner" id="dual-link-banner" hidden>
+    <span id="dual-link-text">Đang liên kết 2 tọa độ GPS</span>
+    <button class="dual-exit-btn" id="btn-exit-dual" type="button">Thoát chế độ 2 hành tinh</button>
+  </div>
+
+  <!-- Khung bản đồ 2D siêu nét khi click lên quả cầu 3D -->
+  <section class="map2d-panel" id="map2d-panel" hidden aria-label="Bản đồ 2D độ phân giải cao">
+    <div class="map2d-header">
+      <div class="map2d-title-wrap">
+        <div class="map2d-title" id="map2d-title">Vị trí 2D · Trái Đất</div>
+        <div class="map2d-coords" id="map2d-coords">0.0000°, 0.0000°</div>
+      </div>
+      <div class="map2d-hbtns">
+        <button class="map2d-icon-btn" id="btn-map2d-expand" type="button" title="Phóng to / Thu nhỏ">⤢</button>
+        <button class="map2d-icon-btn" id="btn-map2d-close" type="button" title="Đóng">✕</button>
+      </div>
+    </div>
+    <div class="map2d-layers" id="map2d-layers"></div>
+    <div id="map2d-canvas"></div>
+    <div class="map2d-footer">
+      <span class="map2d-source" id="map2d-source">Esri World Imagery</span>
+      <button class="map2d-send-btn" id="btn-map2d-send" type="button">➕ Gán vào GPS 1</button>
+    </div>
+  </section>
+
+  <nav class="selector-dock" aria-label="Chọn mô hình hành tinh 3D">
+    <button class="planet-card active" data-planet="earth" id="card-earth">
+      <span class="key-hint">1</span>
+      <span class="orb-preview orb-earth"></span>
+      <span class="card-text">
+        <span class="title">Trái Đất</span>
+        <span class="sub">Earth · Analog Base</span>
+      </span>
+    </button>
+
+    <button class="planet-card" data-planet="moon" id="card-moon">
+      <span class="key-hint">2</span>
+      <span class="orb-preview orb-moon"></span>
+      <span class="card-text">
+        <span class="title">Mặt Trăng</span>
+        <span class="sub">Moon · Lunar Base</span>
+      </span>
+    </button>
+
+    <button class="planet-card" data-planet="mars" id="card-mars">
+      <span class="key-hint">3</span>
+      <span class="orb-preview orb-mars"></span>
+      <span class="card-text">
+        <span class="title">Sao Hỏa</span>
+        <span class="sub">Mars · Red Planet</span>
+      </span>
+    </button>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    (function () {
+      const overlay = document.getElementById('status-overlay');
+      const statusText = document.getElementById('status-text');
+
+      if (typeof THREE === 'undefined') {
+        statusText.textContent = 'Không thể tải thư viện Three.js. Vui lòng kiểm tra kết nối Internet.';
+        return;
+      }
+
+      // ==========================================
+      // 1. CẤU HÌNH THỐNG NHẤT CHO 3 HÀNH TINH
+      // ==========================================
+      const RADIUS = 1.5;
+
+      const PLANET_CONFIG = {
+        earth: {
+          tag: 'Hành tinh chủ · Phòng thí nghiệm Analog',
+          title: 'Trái Đất (Earth)',
+          accent: '#38bdf8',
+          markerColor: 0x38bdf8,
+          placeholderColor: 0x1d4ed8,
+          tiltDeg: 23.4,
+          materialType: 'phong',
+          shininess: 20,
+          specular: 0x334155,
+          atmosphere: { radius: 1.66, color: 0x38bdf8, intensity: 1.1 },
+          desc: 'Nguồn dữ liệu tham chiếu giúp tìm kiếm các địa điểm tương đồng (terrestrial analogs) cho căn cứ Mặt Trăng và Sao Hỏa.',
+          stats: [
+            { label: 'Bán kính', value: '6.371 km' },
+            { label: 'Trọng lực', value: '9,81 m/s²' },
+            { label: 'Nhiệt độ TB', value: '15 °C' },
+            { label: 'Khí quyển', value: '78% N₂, 21% O₂' }
+          ],
+          textures: {
+            color: ['earth_daymap.jpg', '2k_earth_daymap.jpg', '4k_earth_daymap.jpg', '8k_earth_daymap.jpg', 'earth.jpg', 'earth_daymap.png'],
+            clouds: ['earth_clouds.jpg', '2k_earth_clouds.jpg', 'earth_clouds.png'],
+            normal: ['earth_normal.jpg', '2k_earth_normal_map.jpg', 'earth_normal.png'],
+            bump: ['earth_bump.jpg', 'earth_bump.png'],
+            specular: ['earth_specular.jpg', '2k_earth_specular_map.jpg', 'earth_specular.png']
+          },
+          analogsTitle: 'Địa điểm Analog tiêu biểu',
+          analogs: [
+            { name: 'Sa mạc Atacama (Chile)', lat: -24.5, lon: -69.2, note: 'Đất siêu khô hạn & bức xạ UV cao — Analog bề mặt Sao Hỏa.' },
+            { name: 'Haughton Crater (Canada)', lat: 75.37, lon: -89.68, note: 'Hố va chạm vùng cực lạnh — Analog cho Mặt Trăng & Sao Hỏa.' },
+            { name: 'Cao nguyên Iceland', lat: 64.9, lon: -16.8, note: 'Đá bazan núi lửa & băng hà — Thử nghiệm rover & ISRU.' },
+            { name: 'Thung lũng Chết (Mỹ)', lat: 36.5, lon: -117.0, note: 'Địa hình khô cằn & đồi cát — Thử nghiệm điều hướng & bụi.' }
+          ]
+        },
+        moon: {
+          tag: 'Vệ tinh tự nhiên · Mục tiêu Artemis',
+          title: 'Mặt Trăng (Moon)',
+          accent: '#e2e8f0',
+          markerColor: 0xfacc15,
+          placeholderColor: 0x64748b,
+          tiltDeg: 6.7,
+          materialType: 'standard',
+          roughness: 0.94,
+          metalness: 0.02,
+          atmosphere: null,
+          desc: 'Bề mặt phủ bụi regolith, biển basaltic Maria và các vùng tối vĩnh cửu (PSR) ở Cực Nam có tiềm năng băng nước.',
+          stats: [
+            { label: 'Bán kính', value: '1.737 km' },
+            { label: 'Trọng lực', value: '1,62 m/s²' },
+            { label: 'Nhiệt độ', value: '-173° đến 127°C' },
+            { label: 'Khí quyển', value: 'Chân không' }
+          ],
+          textures: {
+            color: ['moon_color.jpg', '2k_moon.jpg', '4k_moon.jpg', '8k_moon.jpg', 'moon.jpg', 'moon_color.png'],
+            bump: ['moon_bump.jpg', 'moon_bump.png']
+          },
+          analogsTitle: 'Mục tiêu căn cứ Mặt Trăng',
+          analogs: [
+            { name: 'Shackleton Crater (Cực Nam)', lat: -89.54, lon: 0.0, note: 'Vùng tối vĩnh cửu chứa băng nước + vành hố đón nắng gần liên tục.' },
+            { name: 'Marius Hills (Ống dung nham)', lat: 14.1, lon: -53.1, note: 'Hang ống dung nham tiềm năng che chắn bức xạ cho căn cứ.' },
+            { name: 'Mare Tranquillitatis', lat: 8.5, lon: 31.4, note: 'Đồng bằng đá bazan cổ đại (khu vực hạ cánh Apollo 11).' }
+          ]
+        },
+        mars: {
+          tag: 'Hành tinh Đỏ · Mục tiêu Thám hiểm',
+          title: 'Sao Hỏa (Mars)',
+          accent: '#fb7185',
+          markerColor: 0x34d399,
+          placeholderColor: 0xb45309,
+          tiltDeg: 25.2,
+          materialType: 'standard',
+          roughness: 0.88,
+          metalness: 0.03,
+          atmosphere: { radius: 1.61, color: 0xf97316, intensity: 0.72 },
+          desc: 'Bề mặt giàu oxit sắt, hẻm núi Valles Marineris, núi lửa khổng lồ Olympus Mons và chỏm băng CO₂/nước ở hai cực.',
+          stats: [
+            { label: 'Bán kính', value: '3.389 km' },
+            { label: 'Trọng lực', value: '3,72 m/s²' },
+            { label: 'Nhiệt độ TB', value: '-63 °C' },
+            { label: 'Khí quyển', value: '95% CO₂ (mỏng)' }
+          ],
+          textures: {
+            color: ['mars_color.jpg', '2k_mars.jpg', '4k_mars.jpg', '8k_mars.jpg', 'mars.jpg', 'mars_color.png'],
+            bump: ['mars_bump.jpg', 'mars_bump.png']
+          },
+          analogsTitle: 'Địa điểm thám hiểm Sao Hỏa',
+          analogs: [
+            { name: 'Jezero Crater', lat: 18.38, lon: 77.58, note: 'Châu thổ hồ cổ đại — Khu vực rover Perseverance tìm dấu vết sự sống.' },
+            { name: 'Valles Marineris', lat: -13.9, lon: -59.2, note: 'Hệ thống hẻm núi dài hơn 4.000 km lộ các tầng địa chất cổ.' },
+            { name: 'Olympus Mons', lat: 18.65, lon: -133.8, note: 'Núi lửa hình khiên lớn nhất Hệ Mặt Trời.' }
+          ]
+        }
+      };
+
+      // ==========================================
+      // 2. KHỞI TẠO CẢNH THREE.JS & ÁNH SÁNG
+      // ==========================================
+      const container = document.getElementById('canvas-container');
+      const scene = new THREE.Scene();
+
+      const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 0.8, 5.4);
+
+      let renderer;
+      try {
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild(renderer.domElement);
+      } catch (err) {
+        statusText.textContent = 'Thiết bị chưa bật WebGL để hiển thị 3D: ' + (err && err.message ? err.message : err);
+        return;
+      }
+
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.minDistance = 2.6;
+      controls.maxDistance = 16;
+      controls.enablePan = false;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 0.85;
+
+      const sunLight = new THREE.DirectionalLight(0xffffff, 1.55);
+      sunLight.position.set(6, 3, 5);
+      scene.add(sunLight);
+
+      const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.25);
+      rimLight.position.set(-6, -2, -5);
+      scene.add(rimLight);
+
+      scene.add(new THREE.AmbientLight(0x475569, 0.65));
+
+      // Nền sao 3D
+      (function createStarfield() {
+        const starGeo = new THREE.BufferGeometry();
+        const count = 2400;
+        const pos = new Float32Array(count * 3);
+        const col = new Float32Array(count * 3);
+        for (let i = 0; i < count; i++) {
+          const r = 45 + Math.random() * 80;
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.acos(2 * Math.random() - 1);
+          pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+          pos[i * 3 + 1] = r * Math.cos(phi);
+          pos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+          const t = 0.75 + Math.random() * 0.25;
+          col[i * 3] = t;
+          col[i * 3 + 1] = t;
+          col[i * 3 + 2] = Math.min(1, t + 0.12);
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        starGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+        const starField = new THREE.Points(starGeo, new THREE.PointsMaterial({
+          size: 0.22,
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.85
+        }));
+        starField.name = 'starfield';
+        scene.add(starField);
+      })();
+
+      // ==========================================
+      // 3. TIỆN ÍCH NẠP TEXTURE & TỌA ĐỘ CẦU
+      // ==========================================
+      const textureLoader = new THREE.TextureLoader();
+
+      function loadSingleTexture(url, isColor) {
+        return new Promise((resolve) => {
+          textureLoader.load(
+            url,
+            (tex) => {
+              if (isColor) tex.encoding = THREE.sRGBEncoding;
+              tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+              tex.userData = { url };
+              resolve(tex);
+            },
+            undefined,
+            () => resolve(null)
+          );
+        });
+      }
+
+      async function loadFirstAvailable(fileNames, isColor = true) {
+        if (!fileNames || !fileNames.length || window.location.protocol === 'file:') return null;
+        for (const name of fileNames) {
+          const tex = await loadSingleTexture('./assets/textures/' + name, isColor);
+          if (tex) return tex;
+        }
+        return null;
+      }
+
+      function createAtmosphereMesh(radius, colorHex, intensity) {
+        const geo = new THREE.SphereGeometry(radius, 64, 64);
+        const mat = new THREE.ShaderMaterial({
+          uniforms: {
+            glowColor: { value: new THREE.Color(colorHex) },
+            intensity: { value: intensity }
+          },
+          vertexShader: `
+            varying vec3 vNormal;
+            void main() {
+              vNormal = normalize(normalMatrix * normal);
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform vec3 glowColor;
+            uniform float intensity;
+            varying vec3 vNormal;
+            void main() {
+              float fresnel = pow(0.68 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.2);
+              gl_FragColor = vec4(glowColor, 1.0) * clamp(fresnel, 0.0, 1.0) * intensity;
+            }
+          `,
+          side: THREE.BackSide,
+          blending: THREE.AdditiveBlending,
+          transparent: true,
+          depthWrite: false
+        });
+        return new THREE.Mesh(geo, mat);
+      }
+
+      function latLonToVector3(lat, lon, radius) {
+        const phi = THREE.MathUtils.degToRad(90 - lat);
+        const theta = THREE.MathUtils.degToRad(lon + 180);
+        return new THREE.Vector3(
+          -radius * Math.sin(phi) * Math.cos(theta),
+          radius * Math.cos(phi),
+          radius * Math.sin(phi) * Math.sin(theta)
+        );
+      }
+
+      function vector3ToLatLon(localVec) {
+        const v = localVec.clone().normalize();
+        const lat = 90 - THREE.MathUtils.radToDeg(Math.acos(THREE.MathUtils.clamp(v.y, -1, 1)));
+        const theta = Math.atan2(v.z, -v.x);
+        let lon = THREE.MathUtils.radToDeg(theta) - 180;
+        if (lon < -180) lon += 360;
+        if (lon > 180) lon -= 360;
+        return { lat, lon };
+      }
+
+      function createAnalogMarkers(cfg) {
+        const markersGroup = new THREE.Group();
+        markersGroup.name = 'markers';
+
+        const dotGeo = new THREE.SphereGeometry(0.032, 16, 16);
+        const ringGeo = new THREE.RingGeometry(0.042, 0.06, 24);
+
+        cfg.analogs.forEach((site, index) => {
+          const pos = latLonToVector3(site.lat, site.lon, RADIUS + 0.015);
+          const dotMat = new THREE.MeshBasicMaterial({ color: cfg.markerColor });
+          const dot = new THREE.Mesh(dotGeo, dotMat);
+          dot.position.copy(pos);
+          dot.userData = { site, index };
+
+          const ringMat = new THREE.MeshBasicMaterial({
+            color: cfg.markerColor,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.75
+          });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.position.copy(pos);
+          ring.lookAt(pos.clone().multiplyScalar(2));
+
+          markersGroup.add(dot);
+          markersGroup.add(ring);
+        });
+
+        return markersGroup;
+      }
+
+      // ==========================================
+      // 4. DỰNG MÔ HÌNH HÀNH TINH TỪ PLANET_CONFIG
+      // ==========================================
+      const sphereGeo = new THREE.SphereGeometry(RADIUS, 64, 64);
+      const planetModels = {};
+      const textureState = {
+        earth: { status: 'loading', fileName: '' },
+        moon: { status: 'loading', fileName: '' },
+        mars: { status: 'loading', fileName: '' }
+      };
+
+      async function buildPlanet(key) {
+        const cfg = PLANET_CONFIG[key];
+        const group = new THREE.Group();
+
+        // Placeholder ban đầu (hiện ngay nếu chưa có ảnh hoặc đang mở file://)
+        const placeholderMat = new THREE.MeshStandardMaterial({
+          color: cfg.placeholderColor,
+          roughness: 0.85,
+          metalness: 0.1,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.45
+        });
+
+        const surfaceMesh = new THREE.Mesh(sphereGeo, placeholderMat);
+        surfaceMesh.name = 'surface';
+        surfaceMesh.userData.planetKey = key;
+        group.add(surfaceMesh);
+
+        // Ghim tọa độ Analog gắn chặt lên surfaceMesh để xoay theo hành tinh
+        const markersGroup = createAnalogMarkers(cfg);
+        surfaceMesh.add(markersGroup);
+
+        if (cfg.atmosphere) {
+          group.add(createAtmosphereMesh(cfg.atmosphere.radius, cfg.atmosphere.color, cfg.atmosphere.intensity));
+        }
+
+        group.rotation.z = THREE.MathUtils.degToRad(cfg.tiltDeg);
+
+        // Nạp ảnh thật từ assets/textures/
+        const [colorMap, cloudMap, normalMap, bumpMap, specMap] = await Promise.all([
+          loadFirstAvailable(cfg.textures.color, true),
+          loadFirstAvailable(cfg.textures.clouds, false),
+          loadFirstAvailable(cfg.textures.normal, false),
+          loadFirstAvailable(cfg.textures.bump, false),
+          loadFirstAvailable(cfg.textures.specular, false)
+        ]);
+
+        if (colorMap) {
+          let realMat;
+          if (cfg.materialType === 'phong') {
+            const opts = {
+              map: colorMap,
+              specular: new THREE.Color(cfg.specular || 0x1e293b),
+              shininess: cfg.shininess || 14
+            };
+            if (normalMap) {
+              opts.normalMap = normalMap;
+              opts.normalScale = new THREE.Vector2(0.85, 0.85);
+            } else if (bumpMap) {
+              opts.bumpMap = bumpMap;
+              opts.bumpScale = 0.04;
+            }
+            if (specMap) {
+              opts.specularMap = specMap;
+              opts.shininess = 24;
+            }
+            realMat = new THREE.MeshPhongMaterial(opts);
+          } else {
+            realMat = new THREE.MeshStandardMaterial({
+              map: colorMap,
+              bumpMap: bumpMap || colorMap,
+              bumpScale: bumpMap ? 0.045 : 0.022,
+              roughness: cfg.roughness ?? 0.9,
+              metalness: cfg.metalness ?? 0.02
+            });
+          }
+
+          realMat.wireframe = isWireframe;
+          surfaceMesh.material.dispose();
+          surfaceMesh.material = realMat;
+
+          if (cloudMap) {
+            const isPng = cloudMap.userData.url.endsWith('.png');
+            const cloudMat = isPng
+              ? new THREE.MeshPhongMaterial({ map: cloudMap, transparent: true, opacity: 0.88, depthWrite: false })
+              : new THREE.MeshPhongMaterial({ color: 0xffffff, alphaMap: cloudMap, transparent: true, opacity: 0.85, depthWrite: false });
+            const cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(RADIUS + 0.028, 64, 64), cloudMat);
+            cloudMesh.name = 'clouds';
+            group.add(cloudMesh);
+          }
+
+          const url = colorMap.userData && colorMap.userData.url ? colorMap.userData.url.split('/').pop() : '';
+          textureState[key] = { status: 'real', fileName: url };
+        } else {
+          textureState[key] = { status: 'missing', fileName: cfg.textures.color[0] };
+        }
+
+        return group;
+      }
+
+      // ==========================================
+      // 5. TƯƠNG TÁC UI, CHUYỂN Ô, POP-UP GPS & DUAL LINK 3D
+      // ==========================================
+      let activePlanetKey = 'earth';
+      let transitionProgress = 1;
+      let isWireframe = false;
+      let showMarkers = true;
+      let pendingLinkArgs = null;
+
+      const dualLinkState = {
+        active: false,
+        targetPlanet: 'mars',
+        earthLat: 0,
+        earthLon: 0,
+        targetLat: 0,
+        targetLon: 0,
+        earthPin: null,
+        targetPin: null
+      };
+
+      // Nhóm chứa đường cong 3D nối 2 tọa độ GPS
+      const linkGroup = new THREE.Group();
+      linkGroup.visible = false;
+      scene.add(linkGroup);
+
+      const ARC_SEGMENTS = 64;
+      const linkLineGeo = new THREE.BufferGeometry();
+      linkLineGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array((ARC_SEGMENTS + 1) * 3), 3));
+      const linkLineMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.9 });
+      const linkLine = new THREE.Line(linkLineGeo, linkLineMat);
+      linkGroup.add(linkLine);
+
+      const pulseDots = [0, 1, 2].map((idx) => {
+        const dot = new THREE.Mesh(
+          new THREE.SphereGeometry(idx === 0 ? 0.052 : 0.036, 16, 16),
+          new THREE.MeshBasicMaterial({ color: idx === 0 ? 0xfef08a : 0x38bdf8 })
+        );
+        linkGroup.add(dot);
+        return dot;
+      });
+
+      const arcCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-1, 0, 0),
+        new THREE.Vector3(0, 1, 1),
+        new THREE.Vector3(1, 0, 0)
+      ]);
+
+      function parseGpsInput(raw) {
+        if (!raw) return null;
+        const parts = String(raw).trim().split(/[\s,;]+/).filter(Boolean);
+        if (parts.length !== 2) return null;
+        const lat = Number(parts[0]);
+        const lon = Number(parts[1]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+        if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+        return { lat, lon };
+      }
+
+      function createCustomPin(planetKey, lat, lon, label, colorHex) {
+        const group = planetModels[planetKey];
+        if (!group) return null;
+        const surface = group.getObjectByName('surface');
+        if (!surface) return null;
+
+        const old = surface.getObjectByName('customPin');
+        if (old) surface.remove(old);
+
+        const pinGroup = new THREE.Group();
+        pinGroup.name = 'customPin';
+
+        const normal = latLonToVector3(lat, lon, 1).normalize();
+        const surfacePos = normal.clone().multiplyScalar(RADIUS + 0.015);
+        const tipPos = normal.clone().multiplyScalar(RADIUS + 0.16);
+
+        const beacon = new THREE.Mesh(
+          new THREE.SphereGeometry(0.048, 16, 16),
+          new THREE.MeshBasicMaterial({ color: colorHex })
+        );
+        beacon.position.copy(tipPos);
+        beacon.userData = { site: { name: label, note: `GPS: ${lat.toFixed(2)}°, ${lon.toFixed(2)}°` } };
+
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(0.065, 0.1, 28),
+          new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
+        );
+        ring.position.copy(surfacePos);
+        ring.lookAt(normal.clone().multiplyScalar(RADIUS * 2));
+
+        const stemGeo = new THREE.BufferGeometry().setFromPoints([surfacePos, tipPos]);
+        const stem = new THREE.Line(stemGeo, new THREE.LineBasicMaterial({ color: colorHex }));
+
+        pinGroup.add(beacon, ring, stem);
+        surface.add(pinGroup);
+        return beacon;
+      }
+
+      function clearCustomPins() {
+        Object.values(planetModels).forEach(group => {
+          const surface = group.getObjectByName('surface');
+          const old = surface && surface.getObjectByName('customPin');
+          if (old) surface.remove(old);
+        });
+        dualLinkState.earthPin = null;
+        dualLinkState.targetPin = null;
+      }
+
+      function rotateSurfaceToFront(planetKey, lat, lon, yawOffset = 0) {
+        const group = planetModels[planetKey];
+        if (!group) return;
+        const surface = group.getObjectByName('surface');
+        if (!surface) return;
+        const v = latLonToVector3(lat, lon, 1);
+        const beta = Math.atan2(v.x, v.z);
+        surface.rotation.y = -beta + yawOffset;
+      }
+
+      function updateLinkArcGeometry() {
+        if (!dualLinkState.active || !dualLinkState.earthPin || !dualLinkState.targetPin) return;
+        const earth = planetModels.earth;
+        const target = planetModels[dualLinkState.targetPlanet];
+        if (!earth || !target) return;
+
+        earth.updateMatrixWorld(true);
+        target.updateMatrixWorld(true);
+
+        const p1 = new THREE.Vector3();
+        const p2 = new THREE.Vector3();
+        dualLinkState.earthPin.getWorldPosition(p1);
+        dualLinkState.targetPin.getWorldPosition(p2);
+
+        const mid = p1.clone().add(p2).multiplyScalar(0.5);
+        mid.y += 1.05;
+        mid.z += 0.95;
+
+        arcCurve.points[0].copy(p1);
+        arcCurve.points[1].copy(mid);
+        arcCurve.points[2].copy(p2);
+
+        const pts = arcCurve.getPoints(ARC_SEGMENTS);
+        const posAttr = linkLineGeo.getAttribute('position');
+        for (let i = 0; i <= ARC_SEGMENTS; i++) {
+          posAttr.setXYZ(i, pts[i].x, pts[i].y, pts[i].z);
+        }
+        posAttr.needsUpdate = true;
+      }
+
+      function exitDualLinkMode(nextPlanetKey) {
+        if (!dualLinkState.active) return;
+        dualLinkState.active = false;
+        linkGroup.visible = false;
+        document.getElementById('dual-link-banner').hidden = true;
+
+        Object.values(planetModels).forEach(group => {
+          group.position.set(0, 0, 0);
+          group.scale.setScalar(1);
+        });
+
+        camera.position.set(0, 0.8, 5.4);
+        controls.target.set(0, 0, 0);
+        controls.update();
+
+        if (nextPlanetKey) {
+          selectPlanet(nextPlanetKey);
+        }
+      }
+
+      function applyAnalogLink({ earthLat, earthLon, targetPlanet, targetLat, targetLon }) {
+        if (!PLANET_CONFIG[targetPlanet] || targetPlanet === 'earth') targetPlanet = 'mars';
+        if (!planetModels.earth || !planetModels[targetPlanet]) {
+          pendingLinkArgs = { earthLat, earthLon, targetPlanet, targetLat, targetLon };
+          return;
+        }
+        pendingLinkArgs = null;
+        clearCustomPins();
+
+        dualLinkState.active = true;
+        dualLinkState.targetPlanet = targetPlanet;
+        dualLinkState.earthLat = earthLat;
+        dualLinkState.earthLon = earthLon;
+        dualLinkState.targetLat = targetLat;
+        dualLinkState.targetLon = targetLon;
+
+        dualLinkState.earthPin = createCustomPin('earth', earthLat, earthLon, 'GPS 1 · Trái Đất', 0xf43f5e);
+        dualLinkState.targetPin = createCustomPin(targetPlanet, targetLat, targetLon, `GPS 2 · ${PLANET_CONFIG[targetPlanet].title}`, 0xfacc15);
+
+        // Xoay 2 điểm GPS hướng vào nhau ở mặt trước
+        rotateSurfaceToFront('earth', earthLat, earthLon, 0.32);
+        rotateSurfaceToFront(targetPlanet, targetLat, targetLon, -0.32);
+
+        Object.entries(planetModels).forEach(([name, group]) => {
+          if (name === 'earth') {
+            group.visible = true;
+            group.position.set(-2.05, 0, 0);
+            group.scale.setScalar(0.82);
+          } else if (name === targetPlanet) {
+            group.visible = true;
+            group.position.set(2.05, 0, 0);
+            group.scale.setScalar(0.82);
+          } else {
+            group.visible = false;
+          }
+        });
+
+        // Tắt autoRotate để giữ 2 hành tinh cân đối trái/phải khi xem tia liên kết
+        controls.autoRotate = false;
+        document.getElementById('btn-autorotate').classList.remove('active');
+
+        camera.position.set(0, 0.4, 6.7);
+        controls.target.set(0, 0, 0);
+        controls.update();
+
+        linkGroup.visible = true;
+        updateLinkArcGeometry();
+
+        document.querySelectorAll('.planet-card').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.planet === 'earth' || btn.dataset.planet === targetPlanet);
+        });
+
+        const targetLabel = targetPlanet === 'moon' ? 'Mặt Trăng' : 'Sao Hỏa';
+        document.getElementById('dual-link-text').textContent =
+          `🔗 Trái Đất (${earthLat.toFixed(2)}°, ${earthLon.toFixed(2)}°) ⟷ ${targetLabel} (${targetLat.toFixed(2)}°, ${targetLon.toFixed(2)}°)`;
+        document.getElementById('dual-link-banner').hidden = false;
+        updateInfoPanel('earth');
+      }
+
+      // Cho phép đồng đội gọi trực tiếp từ script hoặc DevTools
+      window.linkAnalogCoordinates = function (earthCoord, targetPlanet, targetCoord) {
+        const e = typeof earthCoord === 'string' ? parseGpsInput(earthCoord) : earthCoord;
+        const t = typeof targetCoord === 'string' ? parseGpsInput(targetCoord) : targetCoord;
+        if (!e || !t) return false;
+        applyAnalogLink({
+          earthLat: e.lat,
+          earthLon: e.lon,
+          targetPlanet,
+          targetLat: t.lat,
+          targetLon: t.lon
+        });
+        return true;
+      };
+
+      function updateInfoPanel(key) {
+        const cfg = PLANET_CONFIG[key];
+        document.documentElement.style.setProperty('--active-accent', cfg.accent);
+        document.getElementById('info-tag').textContent = cfg.tag;
+        document.getElementById('info-title').textContent = cfg.title;
+        document.getElementById('info-desc').textContent = cfg.desc;
+
+        document.getElementById('stats-grid').innerHTML = cfg.stats.map(s => `
+          <div class="stat-item">
+            <span class="stat-label">${s.label}</span>
+            <span class="stat-value">${s.value}</span>
+          </div>
+        `).join('');
+
+        document.getElementById('analogs-title').textContent = cfg.analogsTitle;
+        const analogsList = document.getElementById('analogs-list');
+        analogsList.innerHTML = cfg.analogs.map((site, idx) => `
+          <button class="analog-item" data-index="${idx}" type="button">
+            <div class="analog-name">
+              <span>${site.name}</span>
+              <span class="analog-coords">${site.lat.toFixed(1)}°, ${site.lon.toFixed(1)}°</span>
+            </div>
+            <div class="analog-note">${site.note}</div>
+          </button>
+        `).join('');
+
+        analogsList.querySelectorAll('.analog-item').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = Number(btn.dataset.index);
+            analogsList.querySelectorAll('.analog-item').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            focusCameraOnLatLon(key, cfg.analogs[idx].lat, cfg.analogs[idx].lon);
+          });
+        });
+
+        const st = textureState[key];
+        const texStatusEl = document.getElementById('texture-status');
+        if (st.status === 'real') {
+          texStatusEl.className = 'texture-status real';
+          texStatusEl.textContent = `✓ Đang dùng ảnh thật: ${st.fileName}`;
+        } else if (st.status === 'loading') {
+          texStatusEl.className = 'texture-status';
+          texStatusEl.textContent = '⏳ Đang tải ảnh vệ tinh từ assets/textures/...';
+        } else if (window.location.protocol === 'file:') {
+          texStatusEl.className = 'texture-status fallback';
+          texStatusEl.textContent = '⚠ Đang mở file://. Hãy chạy start_local.bat hoặc bấm nút bên dưới để chọn ảnh.';
+        } else {
+          texStatusEl.className = 'texture-status fallback';
+          texStatusEl.textContent = `⚠ Chưa có ảnh (${cfg.textures.color.slice(0, 2).join(' hoặc ')}) trong assets/textures/.`;
+        }
+      }
+
+      function focusCameraOnLatLon(key, lat, lon) {
+        if (dualLinkState.active) {
+          exitDualLinkMode(key);
+        }
+        const group = planetModels[key];
+        if (!group) return;
+        const surface = group.getObjectByName('surface');
+        if (!surface) return;
+
+        // Tạm tắt tự xoay để người dùng nhìn rõ điểm vừa chọn
+        controls.autoRotate = false;
+        document.getElementById('btn-autorotate').classList.remove('active');
+
+        surface.updateMatrixWorld(true);
+        const worldPos = latLonToVector3(lat, lon, 1).applyMatrix4(surface.matrixWorld).normalize();
+        const dist = camera.position.length() || 5.4;
+        camera.position.copy(worldPos.multiplyScalar(dist));
+        controls.target.set(0, 0, 0);
+        controls.update();
+      }
+
+      function selectPlanet(key) {
+        if (!PLANET_CONFIG[key]) return;
+        if (dualLinkState.active) {
+          exitDualLinkMode(null);
+        }
+        activePlanetKey = key;
+
+        document.querySelectorAll('.planet-card').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.planet === key);
+        });
+
+        Object.entries(planetModels).forEach(([name, group]) => {
+          group.visible = (name === key);
+          group.position.set(0, 0, 0);
+          if (name === key) group.scale.setScalar(0.58);
+        });
+
+        transitionProgress = 0;
+        updateInfoPanel(key);
+      }
+
+      document.querySelectorAll('.planet-card').forEach(card => {
+        card.addEventListener('click', () => selectPlanet(card.dataset.planet));
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === '1') selectPlanet('earth');
+        if (e.key === '2') selectPlanet('moon');
+        if (e.key === '3') selectPlanet('mars');
+      });
+
+      const btnAutoRotate = document.getElementById('btn-autorotate');
+      btnAutoRotate.addEventListener('click', () => {
+        controls.autoRotate = !controls.autoRotate;
+        btnAutoRotate.classList.toggle('active', controls.autoRotate);
+      });
+
+      const btnMarkers = document.getElementById('btn-markers');
+      btnMarkers.addEventListener('click', () => {
+        showMarkers = !showMarkers;
+        btnMarkers.classList.toggle('active', showMarkers);
+        Object.values(planetModels).forEach(group => {
+          const surface = group.getObjectByName('surface');
+          const m = surface && surface.getObjectByName('markers');
+          if (m) m.visible = showMarkers;
+        });
+      });
+
+      const btnWireframe = document.getElementById('btn-wireframe');
+      btnWireframe.addEventListener('click', () => {
+        isWireframe = !isWireframe;
+        btnWireframe.classList.toggle('active', isWireframe);
+        Object.entries(planetModels).forEach(([key, group]) => {
+          const surface = group.getObjectByName('surface');
+          if (surface && textureState[key].status === 'real') {
+            surface.material.wireframe = isWireframe;
+          }
+        });
+      });
+
+      document.getElementById('btn-reset').addEventListener('click', () => {
+        if (dualLinkState.active) {
+          camera.position.set(0, 0.4, 6.7);
+        } else {
+          camera.position.set(0, 0.8, 5.4);
+        }
+        controls.target.set(0, 0, 0);
+        controls.update();
+      });
+
+      // Pop-up Menu nhập 2 tọa độ GPS
+      const btnGpsMenu = document.getElementById('btn-gps-menu');
+      const gpsPopup = document.getElementById('gps-popup');
+      const gpsEarthInput = document.getElementById('gps-earth-input');
+      const gpsTargetPlanet = document.getElementById('gps-target-planet');
+      const gpsTargetInput = document.getElementById('gps-target-input');
+      const gpsError = document.getElementById('gps-error');
+
+      function toggleGpsPopup(forceOpen) {
+        const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : gpsPopup.hidden;
+        gpsPopup.hidden = !nextOpen;
+        btnGpsMenu.classList.toggle('active', nextOpen);
+        gpsError.hidden = true;
+      }
+
+      btnGpsMenu.addEventListener('click', () => toggleGpsPopup());
+      document.getElementById('btn-gps-close').addEventListener('click', () => toggleGpsPopup(false));
+
+      document.querySelectorAll('.gps-preset-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          gpsEarthInput.value = chip.dataset.earth;
+          gpsTargetPlanet.value = chip.dataset.planet;
+          gpsTargetInput.value = chip.dataset.dest;
+          gpsError.hidden = true;
+        });
+      });
+
+      document.getElementById('btn-gps-link').addEventListener('click', () => {
+        const eCoord = parseGpsInput(gpsEarthInput.value);
+        const tCoord = parseGpsInput(gpsTargetInput.value);
+        if (!eCoord || !tCoord) {
+          gpsError.hidden = false;
+          gpsError.textContent = 'Tọa độ chưa hợp lệ. Hãy nhập dạng "lat, lon" (Lat: -90..90, Lon: -180..180).';
+          return;
+        }
+        gpsError.hidden = true;
+        applyAnalogLink({
+          earthLat: eCoord.lat,
+          earthLon: eCoord.lon,
+          targetPlanet: gpsTargetPlanet.value,
+          targetLat: tCoord.lat,
+          targetLon: tCoord.lon
+        });
+        toggleGpsPopup(false);
+      });
+
+      document.getElementById('btn-gps-clear').addEventListener('click', () => {
+        clearCustomPins();
+        exitDualLinkMode('earth');
+        toggleGpsPopup(false);
+      });
+
+      document.getElementById('btn-exit-dual').addEventListener('click', () => {
+        exitDualLinkMode(activePlanetKey);
+      });
+
+      // Chọn ảnh trực tiếp từ máy (dùng khi mở file:// hoặc muốn đổi texture nhanh)
+      const pickBtn = document.getElementById('btn-pick-texture');
+      const fileInput = document.getElementById('local-texture-input');
+      pickBtn.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const tex = new THREE.Texture(img);
+            tex.encoding = THREE.sRGBEncoding;
+            tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+            tex.needsUpdate = true;
+
+            const group = planetModels[activePlanetKey];
+            const cfg = PLANET_CONFIG[activePlanetKey];
+            if (group) {
+              const surface = group.getObjectByName('surface');
+              if (surface) {
+                surface.material.dispose();
+                surface.material = cfg.materialType === 'phong'
+                  ? new THREE.MeshPhongMaterial({ map: tex, specular: new THREE.Color(0x1e293b), shininess: 14, wireframe: isWireframe })
+                  : new THREE.MeshStandardMaterial({ map: tex, bumpMap: tex, bumpScale: 0.022, roughness: cfg.roughness ?? 0.9, metalness: 0.02, wireframe: isWireframe });
+              }
+              textureState[activePlanetKey] = { status: 'real', fileName: file.name };
+              updateInfoPanel(activePlanetKey);
+            }
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+        fileInput.value = '';
+      });
+
+      // Tooltip khi di chuột qua các ghim 3D
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+      const tooltip = document.getElementById('marker-tooltip');
+
+      renderer.domElement.addEventListener('pointermove', (e) => {
+        const visibleGroups = Object.values(planetModels).filter(g => g && g.visible);
+        if (!visibleGroups.length) {
+          tooltip.style.display = 'none';
+          return;
+        }
+
+        const pickTargets = [];
+        const surfaceTargets = [];
+        visibleGroups.forEach(group => {
+          const surface = group.getObjectByName('surface');
+          if (!surface) return;
+          surfaceTargets.push(surface);
+          if (showMarkers) {
+            const markers = surface.getObjectByName('markers');
+            if (markers) pickTargets.push(...markers.children);
+          }
+          const customPin = surface.getObjectByName('customPin');
+          if (customPin) pickTargets.push(...customPin.children);
+        });
+
+        if (!pickTargets.length) {
+          tooltip.style.display = 'none';
+          return;
+        }
+
+        pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+        pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(pointer, camera);
+
+        const hits = raycaster.intersectObjects(pickTargets, false);
+        const hitWithSite = hits.find(h => h.object.userData && h.object.userData.site);
+        const surfaceHits = raycaster.intersectObjects(surfaceTargets, false);
+        const isFrontSide = !surfaceHits.length || (hitWithSite && hitWithSite.distance <= surfaceHits[0].distance + 0.12);
+
+        if (hitWithSite && isFrontSide) {
+          const site = hitWithSite.object.userData.site;
+          tooltip.style.display = 'block';
+          tooltip.style.left = (e.clientX + 14) + 'px';
+          tooltip.style.top = (e.clientY + 14) + 'px';
+          tooltip.innerHTML = `<strong>${site.name}</strong><br><span style="color:#94a3b8">${site.note}</span>`;
+          renderer.domElement.style.cursor = 'pointer';
+        } else {
+          tooltip.style.display = 'none';
+          renderer.domElement.style.cursor = 'grab';
+        }
+      });
+
+      // ==========================================
+      // 5B. BẢN ĐỒ 2D SIÊU NÉT (TILE MAP API - LEAFLET)
+      // ==========================================
+      const TILE_LAYERS = {
+        earth: [
+          {
+            id: 'esri',
+            label: 'Esri Vệ tinh (<1m)',
+            url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            maxNativeZoom: 18,
+            maxZoom: 19,
+            defaultZoom: 11,
+            attribution: 'Esri, Maxar, Earthstar Geographics'
+          },
+          {
+            id: 'osm',
+            label: 'Bản đồ Địa danh',
+            url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            maxNativeZoom: 19,
+            maxZoom: 19,
+            defaultZoom: 10,
+            attribution: 'OpenStreetMap contributors'
+          },
+          {
+            id: 'gibs',
+            label: 'NASA GIBS MODIS',
+            url: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2026-10-01/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg',
+            maxNativeZoom: 9,
+            maxZoom: 13,
+            defaultZoom: 7,
+            attribution: 'NASA EOSDIS GIBS'
+          }
+        ],
+        moon: [
+          {
+            id: 'opm-moon',
+            label: 'OpenPlanetaryMap LRO',
+            url: 'https://cartocdn-gusc.global.ssl.fastly.net/opmbuilder/api/v1/map/named/opm-moon-basemap-v0-1/all/{z}/{x}/{y}.png',
+            maxNativeZoom: 9,
+            maxZoom: 14,
+            defaultZoom: 6,
+            attribution: 'OpenPlanetaryMap / NASA LRO'
+          }
+        ],
+        mars: [
+          {
+            id: 'opm-mars',
+            label: 'OpenPlanetaryMap Mars',
+            url: 'https://cartocdn-gusc.global.ssl.fastly.net/opmbuilder/api/v1/map/named/opm-mars-basemap-v0-2/all/{z}/{x}/{y}.png',
+            maxNativeZoom: 9,
+            maxZoom: 14,
+            defaultZoom: 6,
+            attribution: 'OpenPlanetaryMap / NASA Viking & MOLA'
+          }
+        ]
+      };
+
+      const map2dPanel = document.getElementById('map2d-panel');
+      const map2dTitle = document.getElementById('map2d-title');
+      const map2dCoords = document.getElementById('map2d-coords');
+      const map2dLayersEl = document.getElementById('map2d-layers');
+      const map2dSource = document.getElementById('map2d-source');
+      const btnMap2dSend = document.getElementById('btn-map2d-send');
+
+      let leafletMap = null;
+      let leafletTileLayer = null;
+      let leafletMarker = null;
+      const map2dState = {
+        planetKey: 'earth',
+        layerId: 'esri',
+        lat: 0,
+        lon: 0,
+        label: ''
+      };
+
+      function setPickedPin3D(planetKey, lat, lon) {
+        Object.values(planetModels).forEach(group => {
+          const surface = group && group.getObjectByName('surface');
+          const old = surface && surface.getObjectByName('pickedPin');
+          if (old) surface.remove(old);
+        });
+
+        const group = planetModels[planetKey];
+        const surface = group && group.getObjectByName('surface');
+        if (!surface) return;
+
+        const pin = new THREE.Group();
+        pin.name = 'pickedPin';
+        const pos = latLonToVector3(lat, lon, RADIUS + 0.018);
+
+        const dot = new THREE.Mesh(
+          new THREE.SphereGeometry(0.038, 16, 16),
+          new THREE.MeshBasicMaterial({ color: 0x22d3ee })
+        );
+        dot.position.copy(pos);
+
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(0.055, 0.085, 24),
+          new THREE.MeshBasicMaterial({ color: 0x22d3ee, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
+        );
+        ring.position.copy(pos);
+        ring.lookAt(pos.clone().multiplyScalar(2));
+
+        pin.add(dot, ring);
+        surface.add(pin);
+      }
+
+      function ensureLeafletMap() {
+        if (leafletMap || typeof L === 'undefined') return;
+        leafletMap = L.map('map2d-canvas', {
+          center: [0, 0],
+          zoom: 4,
+          worldCopyJump: true,
+          attributionControl: false
+        });
+
+        leafletMap.on('click', (ev) => {
+          let lon = ev.latlng.lng;
+          while (lon > 180) lon -= 360;
+          while (lon < -180) lon += 360;
+          const lat = THREE.MathUtils.clamp(ev.latlng.lat, -85.05, 85.05);
+          map2dState.lat = lat;
+          map2dState.lon = lon;
+          map2dState.label = 'Điểm chọn trên bản đồ 2D';
+          map2dCoords.textContent = `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
+          if (leafletMarker) leafletMarker.setLatLng([lat, lon]);
+          setPickedPin3D(map2dState.planetKey, lat, lon);
+        });
+      }
+
+      function apply2DTileLayer(planetKey, layerId, shouldResetZoom = false) {
+        ensureLeafletMap();
+        if (!leafletMap) return;
+        const layers = TILE_LAYERS[planetKey] || TILE_LAYERS.earth;
+        const chosen = layers.find(l => l.id === layerId) || layers[0];
+        map2dState.layerId = chosen.id;
+
+        if (leafletTileLayer) {
+          leafletMap.removeLayer(leafletTileLayer);
+        }
+        leafletTileLayer = L.tileLayer(chosen.url, {
+          maxNativeZoom: chosen.maxNativeZoom,
+          maxZoom: chosen.maxZoom,
+          noWrap: false
+        }).addTo(leafletMap);
+
+        map2dSource.textContent = 'Nguồn Tile API: ' + chosen.attribution;
+
+        map2dLayersEl.innerHTML = layers.map(l => `
+          <button class="map2d-layer-chip ${l.id === chosen.id ? 'active' : ''}" data-layer="${l.id}" type="button">${l.label}</button>
+        `).join('');
+        map2dLayersEl.querySelectorAll('.map2d-layer-chip').forEach(chip => {
+          chip.addEventListener('click', () => apply2DTileLayer(planetKey, chip.dataset.layer, true));
+        });
+
+        if (shouldResetZoom) {
+          leafletMap.setView([map2dState.lat, map2dState.lon], chosen.defaultZoom);
+        }
+      }
+
+      function open2DMapAt(planetKey, lat, lon, label) {
+        if (typeof L === 'undefined') return;
+        const clampedLat = THREE.MathUtils.clamp(lat, -85.05, 85.05);
+        const planetChanged = map2dState.planetKey !== planetKey || !leafletTileLayer;
+
+        map2dState.planetKey = planetKey;
+        map2dState.lat = clampedLat;
+        map2dState.lon = lon;
+        map2dState.label = label || '';
+
+        const pName = PLANET_CONFIG[planetKey] ? PLANET_CONFIG[planetKey].title : planetKey;
+        map2dTitle.textContent = label ? `2D · ${label}` : `Vị trí 2D · ${pName}`;
+        map2dCoords.textContent = `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
+        btnMap2dSend.textContent = planetKey === 'earth' ? '➕ Gán vào GPS 1 (Earth)' : `➕ Gán vào GPS 2 (${planetKey === 'moon' ? 'Moon' : 'Mars'})`;
+
+        map2dPanel.hidden = false;
+        setPickedPin3D(planetKey, lat, lon);
+
+        ensureLeafletMap();
+        const layers = TILE_LAYERS[planetKey] || TILE_LAYERS.earth;
+        const targetLayer = planetChanged ? layers[0] : (layers.find(l => l.id === map2dState.layerId) || layers[0]);
+        if (planetChanged) {
+          apply2DTileLayer(planetKey, targetLayer.id, false);
+        }
+
+        if (!leafletMarker) {
+          leafletMarker = L.circleMarker([clampedLat, lon], {
+            radius: 7,
+            color: '#22d3ee',
+            weight: 2,
+            fillColor: '#0284c7',
+            fillOpacity: 0.75
+          }).addTo(leafletMap);
+        } else {
+          leafletMarker.setLatLng([clampedLat, lon]);
+        }
+
+        const targetZoom = Math.max(leafletMap.getZoom() || 0, targetLayer.defaultZoom);
+        setTimeout(() => {
+          leafletMap.invalidateSize();
+          leafletMap.setView([clampedLat, lon], targetZoom);
+        }, 30);
+      }
+
+      document.getElementById('btn-map2d-close').addEventListener('click', () => {
+        map2dPanel.hidden = true;
+      });
+
+      document.getElementById('btn-map2d-expand').addEventListener('click', () => {
+        map2dPanel.classList.toggle('expanded');
+        if (leafletMap) {
+          setTimeout(() => leafletMap.invalidateSize(), 260);
+        }
+      });
+
+      btnMap2dSend.addEventListener('click', () => {
+        const coordText = `${map2dState.lat.toFixed(4)}, ${map2dState.lon.toFixed(4)}`;
+        if (map2dState.planetKey === 'earth') {
+          gpsEarthInput.value = coordText;
+        } else {
+          gpsTargetPlanet.value = map2dState.planetKey === 'moon' ? 'moon' : 'mars';
+          gpsTargetInput.value = coordText;
+        }
+        toggleGpsPopup(true);
+      });
+
+      // Click trực tiếp lên bề mặt 3D (chỉ kích hoạt khi không phải kéo chuột xoay)
+      let downPos = { x: 0, y: 0 };
+      renderer.domElement.addEventListener('pointerdown', (e) => {
+        downPos = { x: e.clientX, y: e.clientY };
+      });
+
+      renderer.domElement.addEventListener('pointerup', (e) => {
+        if (e.button !== 0) return;
+        const moveDist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
+        if (moveDist > 5) return; // Đang kéo xoay quả cầu, bỏ qua
+
+        const visibleGroups = Object.values(planetModels).filter(g => g && g.visible);
+        if (!visibleGroups.length) return;
+
+        const surfaces = [];
+        const markersList = [];
+        visibleGroups.forEach(group => {
+          const surface = group.getObjectByName('surface');
+          if (!surface) return;
+          surfaces.push(surface);
+          if (showMarkers) {
+            const markers = surface.getObjectByName('markers');
+            if (markers) markersList.push(...markers.children);
+          }
+        });
+
+        pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+        pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(pointer, camera);
+
+        const surfaceHits = raycaster.intersectObjects(surfaces, false);
+        if (!surfaceHits.length) return;
+
+        const firstSurfaceHit = surfaceHits[0];
+        const clickedKey = firstSurfaceHit.object.userData.planetKey || activePlanetKey;
+
+        // Ưu tiên nếu click trúng ghim Analog có sẵn
+        const markerHits = raycaster.intersectObjects(markersList, false);
+        const markerHit = markerHits.find(h => h.object.userData && h.object.userData.site && h.distance <= firstSurfaceHit.distance + 0.12);
+        if (markerHit) {
+          const site = markerHit.object.userData.site;
+          open2DMapAt(clickedKey, site.lat, site.lon, site.name);
+          return;
+        }
+
+        const localPt = firstSurfaceHit.object.worldToLocal(firstSurfaceHit.point.clone());
+        const { lat, lon } = vector3ToLatLon(localPt);
+        open2DMapAt(clickedKey, lat, lon, '');
+      });
+
+      // ==========================================
+      // 6. KHỞI TẠO & VÒNG LẶP RENDER
+      // ==========================================
+      (async function init() {
+        try {
+          // Tải Trái Đất trước để hiện ngay, sau đó tải tiếp Mặt Trăng & Sao Hỏa (ảnh 8K)
+          planetModels.earth = await buildPlanet('earth');
+          planetModels.earth.visible = false;
+          scene.add(planetModels.earth);
+
+          selectPlanet('earth');
+          overlay.classList.add('hidden');
+
+          const [moon, mars] = await Promise.all([
+            buildPlanet('moon'),
+            buildPlanet('mars')
+          ]);
+          planetModels.moon = moon;
+          planetModels.mars = mars;
+          [moon, mars].forEach(m => {
+            m.visible = (activePlanetKey === (m === moon ? 'moon' : 'mars'));
+            const surface = m.getObjectByName('surface');
+            const markers = surface && surface.getObjectByName('markers');
+            if (markers) markers.visible = showMarkers;
+            scene.add(m);
+          });
+
+          // Hỗ trợ truyền 2 tọa độ GPS qua URL (?earth=-24.5,-69.2&target=mars&dest=18.38,77.58)
+          const params = new URLSearchParams(window.location.search);
+          if (params.has('earth') && params.has('dest')) {
+            const e = parseGpsInput(params.get('earth'));
+            const t = parseGpsInput(params.get('dest'));
+            const p = params.get('target') === 'moon' ? 'moon' : 'mars';
+            if (e && t) {
+              gpsEarthInput.value = `${e.lat}, ${e.lon}`;
+              gpsTargetPlanet.value = p;
+              gpsTargetInput.value = `${t.lat}, ${t.lon}`;
+              applyAnalogLink({ earthLat: e.lat, earthLon: e.lon, targetPlanet: p, targetLat: t.lat, targetLon: t.lon });
+              return;
+            }
+          }
+
+          if (pendingLinkArgs) {
+            applyAnalogLink(pendingLinkArgs);
+          } else {
+            updateInfoPanel(activePlanetKey);
+          }
+        } catch (err) {
+          statusText.textContent = 'Lỗi khởi tạo mô hình 3D: ' + (err && err.message ? err.message : err);
+        }
+      })();
+
+      const clock = new THREE.Clock();
+
+      function animate() {
+        requestAnimationFrame(animate);
+        const dt = clock.getDelta();
+        const elapsed = clock.elapsedTime;
+
+        if (!dualLinkState.active && transitionProgress < 1 && planetModels[activePlanetKey]) {
+          transitionProgress = Math.min(1, transitionProgress + dt * 3.2);
+          const ease = 1 - Math.pow(1 - transitionProgress, 3);
+          planetModels[activePlanetKey].scale.setScalar(0.58 + 0.42 * ease);
+        }
+
+        if (dualLinkState.active) {
+          pulseDots.forEach((dot, idx) => {
+            const t = (elapsed * 0.42 - idx * 0.06 + 1) % 1;
+            arcCurve.getPointAt(t, dot.position);
+          });
+        }
+
+        if (planetModels.earth && planetModels.earth.visible) {
+          const clouds = planetModels.earth.getObjectByName('clouds');
+          if (clouds) clouds.rotation.y += dt * 0.055;
+        }
+
+        const starField = scene.getObjectByName('starfield');
+        if (starField) starField.rotation.y += dt * 0.005;
+
+        controls.update();
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      animate();
+    })();
+  </script>
+</body>
+</html>
