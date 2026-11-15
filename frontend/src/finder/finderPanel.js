@@ -129,15 +129,29 @@ export function selectAnalogRankItem(item, targetObj, missionObj, shouldDrawMap 
   };
   const fpLabel = footprintLabelMap[missionObj.footprint_mode] || missionObj.footprint_mode;
   const isFallback = Boolean(item.is_fallback_note);
+  const geoParts = [];
+  if (item.dominant_lithology && String(item.dominant_lithology).toLowerCase() !== 'unknown') {
+    geoParts.push(`Thạch học: ${escapeHtml(item.dominant_lithology)}`);
+  }
+  if (item.surface_mineral_class) {
+    geoParts.push(`Khoáng vật: ${escapeHtml(item.surface_mineral_class)}`);
+  }
+  if (item.elevation_m !== undefined && item.elevation_m !== null) {
+    geoParts.push(`Cao độ: ${item.elevation_m} m`);
+  }
+  const geoLineHtml = geoParts.length
+    ? `<div style="font-size:10.5px;color:#94a3b8;margin-bottom:6px">${geoParts.join(' · ')}</div>`
+    : '';
 
   finderDetailCard.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
       <strong style="font-size:12.5px;color:#e2e8f0">#${item.rank} · ${escapeHtml(item.micro_site_name)}</strong>
       <span class="finder-badge ${isFallback ? 'fallback' : 'manual'}">${isFallback ? 'Auto-Fallback' : 'Verified CSV'}</span>
     </div>
-    <div style="font-size:11px;color:#94a3b8;margin-bottom:6px">
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:4px">
       Tọa độ: ${Number(item.lat).toFixed(3)}°, ${Number(item.lon).toFixed(3)}° · Footprint: <strong style="color:#7dd3fc">${escapeHtml(fpLabel)}</strong>
     </div>
+    ${geoLineHtml}
     ${barsHtml}
     <div style="margin-top:8px;font-size:11.5px;color:#cbd5e1;line-height:1.45">
       <strong style="color:#38bdf8">Công nghệ thử nghiệm:</strong> ${escapeHtml(item.technology_to_test)}

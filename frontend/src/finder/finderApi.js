@@ -1,5 +1,10 @@
 import { FINDER_FEATURES } from '../config/constants.js';
-import { computeWeightsJS, parseCsvText, runKnnTopsisJS } from './csvAndTopsis.js';
+import {
+  computeWeightsJS,
+  parseCsvText,
+  preprocessEarthSiteRowJS,
+  runKnnTopsisJS
+} from './csvAndTopsis.js';
 
 export function getBackendApiCandidates() {
   const candidates = [];
@@ -64,6 +69,8 @@ export async function fetchFirstAvailableCsv(filename) {
   const paths = [
     `../backend/data/${filename}`,
     `/backend/data/${filename}`,
+    `../backend/data/placeholderData/${filename}`,
+    `/backend/data/placeholderData/${filename}`,
     `./data/${filename}`
   ];
   for (const url of paths) {
@@ -74,29 +81,28 @@ export async function fetchFirstAvailableCsv(filename) {
       // Try next path
     }
   }
-  throw new Error(`Không thể fetch ${filename} từ ../backend/data/ hoặc ./data/`);
+  throw new Error(`Không thể fetch ${filename} từ ../backend/data/, placeholderData/ hoặc ./data/`);
+}
+
+async function fetchEarthDatasetCsvText() {
+  try {
+    return await fetchFirstAvailableCsv('merged_earth_features_clean.csv');
+  } catch (_) {
+    return await fetchFirstAvailableCsv('earth_sites_1000.csv');
+  }
 }
 
 export async function computeBundleFromCSVs() {
   const [earthText, basesText, missionsText, testsText] = await Promise.all([
-    fetchFirstAvailableCsv('earth_sites_1000.csv'),
+    fetchEarthDatasetCsvText(),
     fetchFirstAvailableCsv('planetary_bases.csv'),
     fetchFirstAvailableCsv('missions.csv'),
     fetchFirstAvailableCsv('site_tests.csv')
   ]);
 
-  const earthSites = parseCsvText(earthText).map(r => ({
-    site_id: r.site_id,
-    parent_biome: r.parent_biome,
-    micro_site_name: r.micro_site_name,
-    lat: parseFloat(r.lat),
-    lon: parseFloat(r.lon),
-    slope_deg: parseFloat(r.slope_deg),
-    mean_temp_c: parseFloat(r.mean_temp_c),
-    temp_swing_c: parseFloat(r.temp_swing_c),
-    aridity_ice_idx: parseFloat(r.aridity_ice_idx),
-    has_subsurface_void: parseInt(r.has_subsurface_void, 10) || 0
-  }));
+  const earthSites = parseCsvText(earthText)
+    .map(preprocessEarthSiteRowJS)
+    .filter(s => s.site_id && !Number.isNaN(s.lat) && !Number.isNaN(s.lon));
 
   const targets = parseCsvText(basesText).map(r => ({
     target_id: r.target_id,
@@ -148,9 +154,10 @@ export async function computeBundleFromCSVs() {
 
   return {
     meta: {
+      dataset: 'merged_earth_features_clean.csv',
       earth_site_count: earthSites.length,
       active_features: FINDER_FEATURES.map(f => f.col),
-      excluded_features: ['lithology_type']
+      derived_features: ['aridity_ice_idx', 'has_subsurface_void', 'temp_swing_c']
     },
     targets,
     missions,
