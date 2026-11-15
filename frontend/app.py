@@ -1,5 +1,4 @@
-"""Generate precomputed JSON for index.html and provide resilient fallback notes for site_tests.csv."""
-
+# In app.py
 from __future__ import annotations
 
 import argparse
@@ -9,12 +8,20 @@ from pathlib import Path
 import sys
 from typing import Any, Dict
 
+# Detect backend directory robustly
 ROOT_DIR = Path(__file__).resolve().parent
-REPO_DIR = ROOT_DIR.parent
-BACKEND_DIR = REPO_DIR / "backend"
+
+if (ROOT_DIR / "backend").exists():
+    BACKEND_DIR = ROOT_DIR / "backend"
+elif (ROOT_DIR.parent / "backend").exists():
+    BACKEND_DIR = ROOT_DIR.parent / "backend"
+else:
+    BACKEND_DIR = ROOT_DIR
+
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
+# Now import cleanly from engine
 from engine.matcher import build_placeholder_bundle, resolve_site_test_info  # noqa: E402
 
 DATA_DIR = BACKEND_DIR / "data"
