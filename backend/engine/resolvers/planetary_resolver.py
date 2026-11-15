@@ -9,8 +9,11 @@ from .mars_resolver import resolve_mars
 
 
 def _ensure_preprocessor_keys(profile: Dict[str, Any], lat: float) -> Dict[str, Any]:
-    """Ensure shared_17 contains all keys expected by preprocessor.ACTIVE_FEATURES."""
+    """Ensure shared_17 contains all keys expected by preprocessor.ACTIVE_FEATURES
+    and aligns thermal inertia units with the official merged_earth_features_clean.csv scale.
+    """
     shared = profile.get("shared_17", {})
+    body = profile.get("body", "Moon")
     if "temp_swing_c" not in shared:
         max_t = float(shared.get("max_surface_temp_c", 0.0))
         min_t = float(shared.get("min_surface_temp_c", 0.0))
@@ -18,8 +21,21 @@ def _ensure_preprocessor_keys(profile: Dict[str, Any], lat: float) -> Dict[str, 
     if "solar_irradiance_kwh" not in shared:
         exclusive = profile.get("exclusive", {})
         illum = float(exclusive.get("solar_illumination_fraction", max(0.05, math.cos(math.radians(lat)))))
-        base_kwh = 5.8 if profile.get("body") == "Moon" else 3.2
+        base_kwh = 5.8 if body == "Moon" else 3.2
         shared["solar_irradiance_kwh"] = round(base_kwh * illum, 2)
+    if "vegetation_cover_pct" not in shared:
+        shared["vegetation_cover_pct"] = 0.0
+    if "soil_moisture_fraction" not in shared:
+        shared["soil_moisture_fraction"] = 0.0
+    if "mean_annual_precipitation_mm" not in shared:
+        shared["mean_annual_precipitation_mm"] = 0.0
+    if "permafrost_presence" not in shared:
+        has_ice = float(shared.get("water_ice_presence", 0.0)) >= 0.5
+        mean_t = float(shared.get("mean_surface_temp_c", 0.0))
+        shared["permafrost_presence"] = 1 if (has_ice and mean_t < 0.0) else 0
+    if float(shared.get("surface_thermal_inertia", 0.0)) > 30.0:
+        shared["surface_thermal_inertia"] = 26.0 if body == "Moon" else 22.0
+    profile["shared_17"] = shared
     return profile
 
 

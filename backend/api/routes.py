@@ -18,6 +18,8 @@ from engine import (
     apply_domain_bucket_budgets,
     compute_mission_weights,
     filter_candidates_knn,
+    load_earth_dataset,
+    load_planetary_targets,
     rank_candidates_topsis,
 )
 from engine.matcher import (
@@ -26,6 +28,7 @@ from engine.matcher import (
     compute_mission_weights as compute_placeholder_weights,
     match_placeholder_target,
 )
+from engine.preprocessor import OFFICIAL_EARTH_CSV
 from engine.resolvers.planetary_resolver import resolve_planetary_point
 from engine.testbed_protocol import EarthTestbedProtocolEngine
 from .schemas import (
@@ -45,25 +48,38 @@ router = APIRouter(prefix="/api", tags=["Planetary Analogs"])
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 try:
-    DF_EARTH = pd.read_csv(DATA_DIR / "earth_analogs.csv")
-    DF_TARGETS = pd.read_csv(DATA_DIR / "planetary_targets.csv")
-    DF_PRESETS = pd.read_csv(DATA_DIR / "mission_presets.csv")
+    DF_EARTH = load_earth_dataset(DATA_DIR)
 except Exception:
     DF_EARTH = pd.DataFrame()
+
+try:
+    DF_TARGETS = load_planetary_targets(DATA_DIR)
+except Exception:
     DF_TARGETS = pd.DataFrame()
+
+try:
+    _presets_path = DATA_DIR / ("mission_presets.csv" if (DATA_DIR / "mission_presets.csv").exists() else "missions.csv")
+    DF_PRESETS = pd.read_csv(_presets_path) if _presets_path.exists() else pd.DataFrame()
+except Exception:
     DF_PRESETS = pd.DataFrame()
 
 protocol_engine = EarthTestbedProtocolEngine()
 
 
 def _load_placeholder_frames() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    earth_p = DATA_DIR / "earth_sites_1000.csv"
-    targets_p = DATA_DIR / "planetary_bases.csv"
+    try:
+        earth_df = load_earth_dataset(DATA_DIR)
+    except Exception:
+        earth_df = pd.DataFrame()
+    try:
+        targets_df = load_planetary_targets(DATA_DIR)
+    except Exception:
+        targets_df = pd.DataFrame()
     missions_p = DATA_DIR / "missions.csv"
     tests_p = DATA_DIR / "site_tests.csv"
     return (
-        pd.read_csv(earth_p) if earth_p.exists() else pd.DataFrame(),
-        pd.read_csv(targets_p) if targets_p.exists() else pd.DataFrame(),
+        earth_df,
+        targets_df,
         pd.read_csv(missions_p) if missions_p.exists() else pd.DataFrame(),
         pd.read_csv(tests_p) if tests_p.exists() else pd.DataFrame(),
     )
@@ -112,8 +128,8 @@ def list_mission_presets() -> List[MissionPresetResponse]:
             presets.append(
                 MissionPresetResponse(
                     mission_id=str(row["mission_id"]),
-                    mission_name=str(row["mission_name"]),
-                    description=str(row.get("description", "")),
+                    mission_name=str(row.get("mission_name", row.get("mission_type", row["mission_id"]))),
+                    description=str(row.get("description", row.get("technology_to_test", ""))),
                     weights=weights_map,
                 )
             )
@@ -138,20 +154,24 @@ def list_mission_presets() -> List[MissionPresetResponse]:
 
 @router.get("/targets")
 def list_planetary_targets(body: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Returns Moon and Mars target sites from full or placeholder catalog."""
+    """Returns Moon and Mars target sites from official or placeholder catalog."""
     if not DF_TARGETS.empty:
         df = DF_TARGETS
-        if body:
-            df = df[df["body"].str.lower() == body.strip().lower()]
+        body_col = "body" if "body" in df.columns else "planet"
+        if body and body_col in df.columns:
+            df = df[df[body_col].astype(str).str.lower() == body.strip().lower()]
+        feature_cols = [c for c in ACTIVE_FEATURES if c in df.columns]
+        if not feature_cols:
+            feature_cols = [c for c in PLACEHOLDER_FEATURES if c in df.columns]
         return [
             {
-                "site_id": str(row["site_id"]),
-                "body": str(row["body"]),
+                "site_id": str(row.get("site_id", row.get("target_id", ""))),
+                "body": str(row.get("body", row.get("planet", "moon"))),
                 "target_name": str(row.get("site_name", row.get("target_name", "Unknown Target"))),
                 "parent_region": row.get("parent_region", row.get("parent_biome", None)),
                 "lat": float(row.get("latitude_deg", row.get("lat", 0.0))),
                 "lon": float(row.get("longitude_deg", row.get("lon", 0.0))),
-                "features": {col: row[col] for col in ACTIVE_FEATURES if col in row},
+                "features": {col: row[col] for col in feature_cols if col in row},
             }
             for _, row in df.iterrows()
         ]
@@ -274,8 +294,9 @@ def match_analogs_live(payload: AnalogMatchRequest) -> Dict[str, Any]:
 
     return {
         "meta": {
+            "dataset": OFFICIAL_EARTH_CSV,
             "active_features": PLACEHOLDER_FEATURES,
-            "excluded_features": ["lithology_type"],
+            "derived_features": ["aridity_ice_idx", "has_subsurface_void", "temp_swing_c"],
             "earth_site_count": int(len(ph_earth)),
             "algorithm": "Stage 1: Weighted BallTree KNN (Top 25) -> Stage 2: Analog TOPSIS (Top 10)",
         },
@@ -335,13 +356,14 @@ def search_analogs(payload: AnalogSearchRequest) -> AnalogSearchResponse:
     target_profile: Optional[Dict[str, Any]] = None
 
     if payload.target_site_id and not DF_TARGETS.empty:
-        match = DF_TARGETS[DF_TARGETS["site_id"] == payload.target_site_id]
+        id_col = "site_id" if "site_id" in DF_TARGETS.columns else "target_id"
+        match = DF_TARGETS[DF_TARGETS[id_col] == payload.target_site_id]
         if not match.empty:
             row_dict = match.iloc[0].to_dict()
             lat_pt = float(row_dict.get("latitude_deg", row_dict.get("lat", 0.0)))
             lon_pt = float(row_dict.get("longitude_deg", row_dict.get("lon", 0.0)))
             target_profile = resolve_planetary_point(
-                body=str(row_dict.get("body", payload.target_body)),
+                body=str(row_dict.get("body", row_dict.get("planet", payload.target_body))),
                 lat=lat_pt,
                 lon=lon_pt,
                 clip_for_knn=False,

@@ -20,6 +20,12 @@ __all__: List[str] = [
     "prepare_feature_matrices",
     "normalize_clipped",
     "normalize_unclipped",
+    "preprocess_earth_dataframe",
+    "load_earth_dataset",
+    "load_planetary_targets",
+    "canonicalize_lithology",
+    "canonicalize_mineral",
+    "format_site_name",
     # Stage 1: Candidate retrieval
     "filter_candidates_knn",
     # Stage 2: MCDA ranking & diagnostics
@@ -55,6 +61,12 @@ def __getattr__(name: str) -> Any:
         "prepare_feature_matrices",
         "normalize_clipped",
         "normalize_unclipped",
+        "preprocess_earth_dataframe",
+        "load_earth_dataset",
+        "load_planetary_targets",
+        "canonicalize_lithology",
+        "canonicalize_mineral",
+        "format_site_name",
     ):
         from . import preprocessor
 

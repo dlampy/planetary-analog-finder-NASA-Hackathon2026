@@ -1,11 +1,12 @@
 """Two-stage Planetary Analog matching engine: Weighted BallTree KNN -> Analog TOPSIS.
 
-Note: `lithology_type` is intentionally excluded for now until the team locks its
-numerical encoding. Active weights are automatically re-normalized to sum to 1.0.
+Ingests the official 51-site `merged_earth_features_clean.csv` dataset via
+`preprocessor.load_earth_dataset` (with fallback support for legacy 5-factor CSVs).
 """
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -13,11 +14,20 @@ import numpy as np
 import pandas as pd
 from sklearn.neighbors import NearestNeighbors
 
+from .preprocessor import (
+    OFFICIAL_EARTH_CSV,
+    derive_aridity_ice_idx,
+    infer_subsurface_void,
+    load_earth_dataset,
+    load_planetary_targets,
+    preprocess_earth_dataframe,
+)
+
 FEATURE_META: Dict[str, Dict[str, Any]] = {
     "slope_deg": {
         "weight_col": "w_slope",
         "min": 0.0,
-        "max": 45.0,
+        "max": 65.0,
         "label": "Độ dốc (Slope)",
         "unit": "°",
     },
@@ -82,6 +92,37 @@ def compute_mission_weights(mission_row: pd.Series | Dict[str, Any]) -> Dict[str
     return {col: round(val / total, 6) for col, val in raw.items()}
 
 
+def _extract_target_feature(target_row: pd.Series | Dict[str, Any], col: str) -> float:
+    """Reads 5-factor target features with fallback to official/17-factor column names."""
+    def _get(k: str) -> Any:
+        return target_row.get(k) if isinstance(target_row, dict) else (target_row[k] if k in target_row else None)
+
+    direct = _get(col)
+    if direct is not None and not (isinstance(direct, float) and math.isnan(direct)):
+        return float(direct)
+
+    if col == "slope_deg":
+        v = _get("mean_slope_deg")
+        return float(v) if v is not None else 0.0
+    if col == "mean_temp_c":
+        v = _get("mean_surface_temp_c")
+        return float(v) if v is not None else 0.0
+    if col == "temp_swing_c":
+        v = _get("surface_thermal_inertia")
+        if v is not None:
+            return float(v)
+        max_t = _get("max_surface_temp_c")
+        min_t = _get("min_surface_temp_c")
+        if max_t is not None and min_t is not None:
+            return max(0.0, float(max_t) - float(min_t))
+        return 0.0
+    if col == "aridity_ice_idx":
+        return derive_aridity_ice_idx(target_row)
+    if col == "has_subsurface_void":
+        return float(infer_subsurface_void(target_row))
+    return 0.0
+
+
 def get_top_analogs(
     earth_df: pd.DataFrame,
     target_row: pd.Series | Dict[str, Any],
@@ -93,6 +134,10 @@ def get_top_analogs(
     if earth_df.empty:
         return []
 
+    required_cols = set(ACTIVE_FEATURES) | {"lat", "lon", "parent_biome", "micro_site_name"}
+    if not required_cols.issubset(earth_df.columns):
+        earth_df = preprocess_earth_dataframe(earth_df)
+
     weights_map = compute_mission_weights(mission_row)
     weights = np.array([weights_map[c] for c in ACTIVE_FEATURES], dtype=float)
     sqrt_weights = np.sqrt(weights)
@@ -102,7 +147,7 @@ def get_top_analogs(
         [_normalize_clipped(earth_df[c].to_numpy(dtype=float), c) for c in ACTIVE_FEATURES]
     )
     target_vals = np.array(
-        [float(target_row.get(c) if isinstance(target_row, dict) else target_row[c]) for c in ACTIVE_FEATURES],
+        [_extract_target_feature(target_row, c) for c in ACTIVE_FEATURES],
         dtype=float,
     )
     target_clipped = np.array(
@@ -185,6 +230,14 @@ def get_top_analogs(
                 "weakest_factor": weakest_col,
                 "strongest_factors": strongest_cols,
                 "out_of_earth_bounds": out_of_bounds_flags,
+                "elevation_m": round(float(row.get("elevation_m", 0.0)), 1),
+                "terrain_roughness_m": round(float(row.get("terrain_roughness_m", 0.0)), 2),
+                "dominant_lithology": str(row.get("dominant_lithology", "unknown")),
+                "basalt_fraction_pct": round(float(row.get("basalt_fraction_pct", 0.0)), 1),
+                "surface_mineral_class": str(row.get("surface_mineral_class", "Silicate")),
+                "surface_albedo": round(float(row.get("surface_albedo", 0.2)), 3),
+                "water_ice_presence": int(row.get("water_ice_presence", 0)),
+                "permafrost_presence": int(row.get("permafrost_presence", 0)),
             }
         )
 
@@ -251,6 +304,15 @@ def resolve_site_test_info(
     why_parts = [
         f"Thuộc vùng {earth_item['parent_biome']} ({earth_item['micro_site_name']}), tương đồng nổi bật với {target_name} ở {top_desc}."
     ]
+    lith = str(earth_item.get("dominant_lithology", "") or "").strip()
+    mineral = str(earth_item.get("surface_mineral_class", "") or "").strip()
+    basalt_pct = earth_item.get("basalt_fraction_pct")
+    if lith and lith.lower() != "unknown":
+        mineral_txt = f"nhóm khoáng {mineral}" if mineral else "địa chất đặc trưng"
+        basalt_txt = f", tỷ lệ bazan {basalt_pct}%" if basalt_pct is not None else ""
+        why_parts.append(f"Thành phần thạch học: {lith} ({mineral_txt}{basalt_txt}).")
+    if int(earth_item.get("permafrost_presence", 0)) == 1:
+        why_parts.append("Có tầng đất đóng băng vĩnh cửu (permafrost) phục vụ thử nghiệm vùng cực/băng ngầm.")
     if int(earth_item["features"].get("has_subsurface_void", 0)) == 1:
         why_parts.append("Có cấu trúc hang/ống ngầm hỗ trợ thử nghiệm khảo sát và che chắn bức xạ.")
 
@@ -296,17 +358,18 @@ def match_placeholder_target(
 
 
 def build_placeholder_bundle(data_dir: Path) -> Dict[str, Any]:
-    """Build the full precomputed/live analog bundle from placeholder 5-factor CSVs."""
-    earth_df = pd.read_csv(data_dir / "earth_sites_1000.csv")
-    targets_df = pd.read_csv(data_dir / "planetary_bases.csv")
+    """Build the full precomputed/live analog bundle from official Earth & planetary CSVs."""
+    earth_df = load_earth_dataset(data_dir)
+    targets_df = load_planetary_targets(data_dir)
     missions_df = pd.read_csv(data_dir / "missions.csv")
     site_tests_path = data_dir / "site_tests.csv"
     site_tests_df = pd.read_csv(site_tests_path) if site_tests_path.exists() else pd.DataFrame()
 
     payload: Dict[str, Any] = {
         "meta": {
+            "dataset": OFFICIAL_EARTH_CSV,
             "active_features": ACTIVE_FEATURES,
-            "excluded_features": ["lithology_type"],
+            "derived_features": ["aridity_ice_idx", "has_subsurface_void", "temp_swing_c"],
             "earth_site_count": int(len(earth_df)),
             "algorithm": "Stage 1: Weighted BallTree KNN (Top 25) -> Stage 2: Analog TOPSIS (Top 10)",
         },
@@ -316,14 +379,19 @@ def build_placeholder_bundle(data_dir: Path) -> Dict[str, Any]:
     }
 
     for _, trow in targets_df.iterrows():
+        t_id = str(trow.get("target_id", trow.get("site_id", "")))
+        planet = str(trow.get("planet", trow.get("body", "moon"))).lower()
+        t_name = str(trow.get("target_name", trow.get("micro_site_name", t_id)))
+        t_lat = float(trow.get("lat", trow.get("latitude_deg", 0.0)))
+        t_lon = float(trow.get("lon", trow.get("longitude_deg", 0.0)))
         payload["targets"].append(
             {
-                "target_id": str(trow["target_id"]),
-                "planet": str(trow["planet"]).lower(),
-                "target_name": str(trow["target_name"]),
-                "lat": float(trow["lat"]),
-                "lon": float(trow["lon"]),
-                "features": {c: float(trow[c]) for c in ACTIVE_FEATURES},
+                "target_id": t_id,
+                "planet": planet,
+                "target_name": t_name,
+                "lat": t_lat,
+                "lon": t_lon,
+                "features": {c: _extract_target_feature(trow, c) for c in ACTIVE_FEATURES},
             }
         )
 
@@ -339,7 +407,7 @@ def build_placeholder_bundle(data_dir: Path) -> Dict[str, Any]:
         )
 
     for _, trow in targets_df.iterrows():
-        t_id = str(trow["target_id"])
+        t_id = str(trow.get("target_id", trow.get("site_id", "")))
         payload["results"][t_id] = {}
         for _, mrow in missions_df.iterrows():
             m_id = str(mrow["mission_id"])

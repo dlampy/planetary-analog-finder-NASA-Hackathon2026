@@ -99,7 +99,7 @@ export const PLANET_CONFIG = {
 };
 
 export const FINDER_FEATURES = [
-  { col: 'slope_deg', label: 'Độ dốc (Slope)', unit: '°', bounds: [0, 45], weightCol: 'w_slope' },
+  { col: 'slope_deg', label: 'Độ dốc (Slope)', unit: '°', bounds: [0, 65], weightCol: 'w_slope' },
   { col: 'mean_temp_c', label: 'Nhiệt độ TB', unit: '°C', bounds: [-30, 45], weightCol: 'w_temp' },
   { col: 'temp_swing_c', label: 'Biên độ nhiệt ngày', unit: '°C', bounds: [0, 40], weightCol: 'w_temp_swing' },
   { col: 'aridity_ice_idx', label: 'Độ khô hạn / Băng', unit: '', bounds: [0, 1], weightCol: 'w_aridity_ice' },
