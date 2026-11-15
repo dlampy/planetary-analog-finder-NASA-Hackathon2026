@@ -26,6 +26,9 @@ from engine.matcher import (
     ACTIVE_FEATURES as PLACEHOLDER_FEATURES,
     build_placeholder_bundle,
     compute_mission_weights as compute_placeholder_weights,
+    get_mission_description,
+    get_mission_label,
+    infer_footprint_mode,
     match_placeholder_target,
 )
 from engine.preprocessor import OFFICIAL_EARTH_CSV
@@ -203,7 +206,7 @@ def list_planetary_targets(body: Optional[str] = None) -> List[Dict[str, Any]]:
 
 @router.get("/missions")
 def list_missions_from_csv() -> List[Dict[str, Any]]:
-    """Returns mission types and 5-factor TOPSIS weights directly from missions.csv."""
+    """Returns mission types and TOPSIS weights directly from missions.csv."""
     _, _, ph_missions, _ = _load_placeholder_frames()
     if ph_missions.empty:
         raise HTTPException(
@@ -213,14 +216,11 @@ def list_missions_from_csv() -> List[Dict[str, Any]]:
     return [
         {
             "mission_id": str(row["mission_id"]),
-            "mission_type": str(row["mission_type"]),
-            "technology_to_test": str(row.get("technology_to_test", "")),
-            "footprint_mode": str(row.get("footprint_mode", "square_1km")),
-            "w_slope": float(row.get("w_slope", 0.0)),
-            "w_temp": float(row.get("w_temp", 0.0)),
-            "w_temp_swing": float(row.get("w_temp_swing", 0.0)),
-            "w_aridity_ice": float(row.get("w_aridity_ice", 0.0)),
-            "w_void": float(row.get("w_void", 0.0)),
+            "mission_type": get_mission_label(row),
+            "mission_name": get_mission_label(row),
+            "technology_to_test": get_mission_description(row),
+            "description": get_mission_description(row),
+            "footprint_mode": infer_footprint_mode(row),
             "weights": compute_placeholder_weights(row),
         }
         for _, row in ph_missions.iterrows()
@@ -351,9 +351,9 @@ def match_analogs_live(payload: AnalogMatchRequest) -> Dict[str, Any]:
         "target": target_obj,
         "mission": {
             "mission_id": str(mission_row["mission_id"]),
-            "mission_type": str(mission_row["mission_type"]),
-            "technology_to_test": str(mission_row["technology_to_test"]),
-            "footprint_mode": str(mission_row["footprint_mode"]),
+            "mission_type": get_mission_label(mission_row),
+            "technology_to_test": get_mission_description(mission_row),
+            "footprint_mode": infer_footprint_mode(mission_row),
             "weights": compute_placeholder_weights(mission_row),
         },
         "results": ranked,

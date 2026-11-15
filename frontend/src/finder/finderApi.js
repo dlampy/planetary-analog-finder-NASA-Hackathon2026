@@ -1,6 +1,7 @@
 import { FINDER_FEATURES } from '../config/constants.js';
 import {
   computeWeightsJS,
+  inferFootprintModeJS,
   parseCsvText,
   preprocessEarthSiteRowJS,
   resolvePlanetaryPointJS,
@@ -130,16 +131,15 @@ async function fetchEarthDatasetCsvText() {
 function parseMissionRows(missionsText) {
   return parseCsvText(missionsText).map(r => {
     const weights = computeWeightsJS(r);
+    const label = r.mission_type || r.mission_name || r.mission_id;
+    const desc = r.technology_to_test || r.description || label;
     return {
       mission_id: r.mission_id,
-      mission_type: r.mission_type,
-      technology_to_test: r.technology_to_test || '',
-      footprint_mode: r.footprint_mode || 'square_1km',
-      w_slope: parseFloat(r.w_slope) || 0,
-      w_temp: parseFloat(r.w_temp) || 0,
-      w_temp_swing: parseFloat(r.w_temp_swing) || 0,
-      w_aridity_ice: parseFloat(r.w_aridity_ice) || 0,
-      w_void: parseFloat(r.w_void) || 0,
+      mission_type: label,
+      mission_name: label,
+      technology_to_test: desc,
+      description: desc,
+      footprint_mode: inferFootprintModeJS(r),
       weights
     };
   });

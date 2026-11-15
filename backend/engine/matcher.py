@@ -77,13 +77,64 @@ def _normalize_unclipped(values: np.ndarray, col: str) -> np.ndarray:
     return (values.astype(float) - lo) / (hi - lo)
 
 
+def _row_get(row: pd.Series | Dict[str, Any], key: str, default: Any = None) -> Any:
+    val = row.get(key, default) if isinstance(row, dict) else (row[key] if key in row else default)
+    if val is None or (isinstance(val, float) and math.isnan(val)):
+        return default
+    return val
+
+
+def infer_footprint_mode(mission_row: pd.Series | Dict[str, Any]) -> str:
+    explicit = str(_row_get(mission_row, "footprint_mode", "") or "").strip()
+    if explicit:
+        return explicit
+    mid = str(_row_get(mission_row, "mission_id", "") or "").lower()
+    if "subsurface" in mid or "lava_tube" in mid:
+        return "circle_500m"
+    if "rover" in mid or "eva" in mid:
+        return "circle_5km"
+    return "square_1km"
+
+
+def get_mission_label(mission_row: pd.Series | Dict[str, Any]) -> str:
+    return str(
+        _row_get(mission_row, "mission_type")
+        or _row_get(mission_row, "mission_name")
+        or _row_get(mission_row, "mission_id", "Mission")
+    )
+
+
+def get_mission_description(mission_row: pd.Series | Dict[str, Any]) -> str:
+    return str(
+        _row_get(mission_row, "technology_to_test")
+        or _row_get(mission_row, "description")
+        or get_mission_label(mission_row)
+    )
+
+
+def _num(mission_row: pd.Series | Dict[str, Any], key: str) -> float:
+    try:
+        return max(0.0, float(_row_get(mission_row, key, 0.0) or 0.0))
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def compute_mission_weights(mission_row: pd.Series | Dict[str, Any]) -> Dict[str, float]:
-    """Extract weights for active features (excluding lithology_type) and normalize to 1.0."""
-    raw = {}
-    for col in ACTIVE_FEATURES:
-        w_col = FEATURE_META[col]["weight_col"]
-        val = float(mission_row.get(w_col, 0.0) if isinstance(mission_row, dict) else mission_row[w_col])
-        raw[col] = max(0.0, val)
+    """Extract normalized 5-factor weights from either 5-factor or 17-factor missions.csv."""
+    has_legacy_5 = _num(mission_row, "w_temp") > 0.0 or _num(mission_row, "w_aridity_ice") > 0.0
+    if has_legacy_5:
+        raw = {
+            col: _num(mission_row, str(FEATURE_META[col]["weight_col"]))
+            for col in ACTIVE_FEATURES
+        }
+    else:
+        raw = {
+            "slope_deg": _num(mission_row, "w_slope") + 0.5 * _num(mission_row, "w_roughness") + 0.2 * _num(mission_row, "w_dust"),
+            "mean_temp_c": _num(mission_row, "w_temp_mean") + 0.5 * _num(mission_row, "w_temp_min") + 0.5 * _num(mission_row, "w_temp_max"),
+            "temp_swing_c": _num(mission_row, "w_temp_swing") + 0.5 * _num(mission_row, "w_thermal_inertia") + 0.3 * _num(mission_row, "w_solar"),
+            "aridity_ice_idx": _num(mission_row, "w_water_ice") + _num(mission_row, "w_ice_aridity"),
+            "has_subsurface_void": _num(mission_row, "w_void"),
+        }
 
     total = sum(raw.values())
     if total <= 0.0:
@@ -267,13 +318,22 @@ def resolve_site_test_info(
 ) -> Dict[str, Any]:
     """Lookup site_tests.csv (exact site+mission -> site-only -> dynamic scientific fallback)."""
     site_id = earth_item["site_id"]
-    mission_id = str(mission_row["mission_id"])
-    planet = str(target_row.get("planet", target_row.get("body", "moon")))
-    target_name = str(target_row.get("target_name", target_row.get("micro_site_name", "Target")))
+    mission_id = str(_row_get(mission_row, "mission_id", ""))
+    mission_aliases = {mission_id}
+    alias_map = {
+        "isru_extraction": "ground_isru",
+        "ground_isru": "isru_extraction",
+        "subsurface_habitat": "lava_tube_habitat",
+        "lava_tube_habitat": "subsurface_habitat",
+    }
+    if mission_id in alias_map:
+        mission_aliases.add(alias_map[mission_id])
+    planet = str(_row_get(target_row, "planet") or _row_get(target_row, "body") or "moon")
+    target_name = str(_row_get(target_row, "target_name") or _row_get(target_row, "micro_site_name") or "Target")
 
     if not site_tests_df.empty:
         exact = site_tests_df[
-            (site_tests_df["site_id"] == site_id) & (site_tests_df["mission_id"] == mission_id)
+            (site_tests_df["site_id"] == site_id) & (site_tests_df["mission_id"].isin(mission_aliases))
         ]
         if not exact.empty:
             r = exact.iloc[0]
@@ -290,7 +350,7 @@ def resolve_site_test_info(
             r = site_only.iloc[0]
             return {
                 "is_fallback_note": True,
-                "technology_to_test": str(mission_row["technology_to_test"]),
+                "technology_to_test": get_mission_description(mission_row),
                 "why_suitable": f"Base note ({earth_item['micro_site_name']}): {r['why_suitable']}",
                 "analogy_limitations": str(r["analogy_limitations"]),
                 "source_url": str(r["source_url"]),
@@ -327,8 +387,8 @@ def resolve_site_test_info(
         )
         limit_parts.append(f"Out-of-Earth-bounds warning at {target_name}: {oob_labels}.")
 
-    tech = str(mission_row["technology_to_test"])
-    if int(earth_item["features"].get("has_subsurface_void", 0)) == 0 and mission_id == "lava_tube_habitat":
+    tech = get_mission_description(mission_row)
+    if int(earth_item["features"].get("has_subsurface_void", 0)) == 0 and mission_id in ("lava_tube_habitat", "subsurface_habitat"):
         tech += " (Note: this site has no natural subsurface void; testing is limited to surface terrain and RF propagation)."
 
     return {
@@ -350,7 +410,7 @@ def match_placeholder_target(
 ) -> List[Dict[str, Any]]:
     """Run 5-factor KNN -> TOPSIS and enrich each match with site_tests notes."""
     ranked = get_top_analogs(earth_df, target_row, mission_row, knn_k=knn_k, top_n=top_n)
-    footprint_mode = str(mission_row["footprint_mode"])
+    footprint_mode = infer_footprint_mode(mission_row)
     for item in ranked:
         item.update(resolve_site_test_info(item, target_row, mission_row, site_tests_df))
         item["footprint_mode"] = footprint_mode
@@ -399,9 +459,9 @@ def build_placeholder_bundle(data_dir: Path) -> Dict[str, Any]:
         payload["missions"].append(
             {
                 "mission_id": str(mrow["mission_id"]),
-                "mission_type": str(mrow["mission_type"]),
-                "technology_to_test": str(mrow["technology_to_test"]),
-                "footprint_mode": str(mrow["footprint_mode"]),
+                "mission_type": get_mission_label(mrow),
+                "technology_to_test": get_mission_description(mrow),
+                "footprint_mode": infer_footprint_mode(mrow),
                 "weights": compute_mission_weights(mrow),
             }
         )

@@ -167,9 +167,13 @@
 }
 
 .finder-mission-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.finder-mission-tabs .finder-mission-tab {
+  flex: 1 1 125px;
 }
 
 .finder-target-row {
@@ -1019,7 +1023,7 @@
 
 .welcome-mission-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
   gap: 9px;
 }
 

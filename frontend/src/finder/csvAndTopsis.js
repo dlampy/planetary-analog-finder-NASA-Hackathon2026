@@ -232,24 +232,59 @@ export function parseCsvText(text) {
   });
 }
 
+export function inferFootprintModeJS(missionRow) {
+  const explicit = String(missionRow?.footprint_mode || '').trim();
+  if (explicit) return explicit;
+  const id = String(missionRow?.mission_id || '').toLowerCase();
+  if (id.includes('subsurface') || id.includes('lava_tube')) return 'circle_500m';
+  if (id.includes('rover') || id.includes('eva')) return 'circle_5km';
+  return 'square_1km';
+}
+
+function numWeightJS(row, key) {
+  return Math.max(0, parseFloat(row?.[key]) || 0);
+}
+
 export function computeWeightsJS(missionRow) {
-  const raw = {};
+  if (missionRow?.weights && typeof missionRow.weights === 'object' && FINDER_FEATURES.every(f => typeof missionRow.weights[f.col] === 'number')) {
+    return missionRow.weights;
+  }
+
+  const hasLegacy5 = numWeightJS(missionRow, 'w_temp') > 0 || numWeightJS(missionRow, 'w_aridity_ice') > 0;
+  let raw = {};
+  if (hasLegacy5) {
+    FINDER_FEATURES.forEach(f => {
+      raw[f.col] = numWeightJS(missionRow, f.weightCol);
+    });
+  } else {
+    raw = {
+      slope_deg: numWeightJS(missionRow, 'w_slope') + 0.5 * numWeightJS(missionRow, 'w_roughness') + 0.2 * numWeightJS(missionRow, 'w_dust'),
+      mean_temp_c: numWeightJS(missionRow, 'w_temp_mean') + 0.5 * numWeightJS(missionRow, 'w_temp_min') + 0.5 * numWeightJS(missionRow, 'w_temp_max'),
+      temp_swing_c: numWeightJS(missionRow, 'w_temp_swing') + 0.5 * numWeightJS(missionRow, 'w_thermal_inertia') + 0.3 * numWeightJS(missionRow, 'w_solar'),
+      aridity_ice_idx: numWeightJS(missionRow, 'w_water_ice') + numWeightJS(missionRow, 'w_ice_aridity'),
+      has_subsurface_void: numWeightJS(missionRow, 'w_void')
+    };
+  }
+
   let total = 0;
-  FINDER_FEATURES.forEach(f => {
-    const val = Math.max(0, parseFloat(missionRow[f.weightCol]) || 0);
-    raw[f.col] = val;
-    total += val;
-  });
+  FINDER_FEATURES.forEach(f => { total += raw[f.col] || 0; });
   const weights = {};
   const fallbackW = 1 / FINDER_FEATURES.length;
   FINDER_FEATURES.forEach(f => {
-    weights[f.col] = total > 0 ? +(raw[f.col] / total).toFixed(6) : fallbackW;
+    weights[f.col] = total > 0 ? +((raw[f.col] || 0) / total).toFixed(6) : fallbackW;
   });
   return weights;
 }
 
 export function resolveSiteTestFallbackJS(earthItem, targetObj, missionObj, testExactMap, testSiteMap) {
-  const exact = testExactMap[`${earthItem.site_id}|${missionObj.mission_id}`];
+  const missionAliases = [missionObj.mission_id];
+  if (missionObj.mission_id === 'isru_extraction') missionAliases.push('ground_isru');
+  if (missionObj.mission_id === 'ground_isru') missionAliases.push('isru_extraction');
+  if (missionObj.mission_id === 'subsurface_habitat') missionAliases.push('lava_tube_habitat');
+  if (missionObj.mission_id === 'lava_tube_habitat') missionAliases.push('subsurface_habitat');
+
+  const exactKey = missionAliases.map(mid => `${earthItem.site_id}|${mid}`).find(k => testExactMap[k]);
+  const exact = exactKey ? testExactMap[exactKey] : null;
   if (exact) {
     return {
       is_fallback_note: false,
@@ -311,8 +346,8 @@ export function resolveSiteTestFallbackJS(earthItem, targetObj, missionObj, test
     limitParts.push(`Out-of-Earth-bounds warning at ${targetObj.target_name}: ${oobStr}.`);
   }
 
-  let tech = missionObj.technology_to_test;
-  if ((earthItem.features.has_subsurface_void || 0) === 0 && missionObj.mission_id === 'lava_tube_habitat') {
+  let tech = missionObj.technology_to_test || missionObj.description || missionObj.mission_type || '';
+  if ((earthItem.features.has_subsurface_void || 0) === 0 && (missionObj.mission_id === 'lava_tube_habitat' || missionObj.mission_id === 'subsurface_habitat')) {
     tech += ' (Note: this site has no natural subsurface void; testing is limited to surface terrain and RF propagation).';
   }
 

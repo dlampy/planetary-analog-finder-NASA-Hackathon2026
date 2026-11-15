@@ -12,6 +12,7 @@ import {
   fetchBackendMatch,
   fetchFromBackendBundle,
   fetchPrecomputedAnalogsJson,
+  loadMissionCatalogMetadata,
   probeLiveBackendBase
 } from './finderApi.js';
 
@@ -38,6 +39,14 @@ let reopenWizardCallback = null;
 
 export function registerReopenWizardCallback(cb) {
   reopenWizardCallback = typeof cb === 'function' ? cb : null;
+}
+
+function ensureMissionInData(missionObj) {
+  const missions = appState.finderState.data?.missions;
+  if (!missionObj || !Array.isArray(missions)) return;
+  if (!missions.some(m => m.mission_id === missionObj.mission_id)) {
+    missions.push(missionObj);
+  }
 }
 
 function formatCustomTargetLabel(planet, lat, lon, explicitLabel) {
@@ -94,6 +103,7 @@ async function refreshMatchForTarget(targetObj, missionId) {
         targetObj.features = payload.target.features || targetObj.features;
         targetObj.resolved_profile = payload.target.resolved_profile || targetObj.resolved_profile;
       }
+      if (payload.mission) ensureMissionInData(payload.mission);
       if (!finderState.data.results[targetObj.target_id]) finderState.data.results[targetObj.target_id] = {};
       finderState.data.results[targetObj.target_id][missionId] = payload.results;
       finderSourceStatus.textContent = sourceNote;
@@ -117,6 +127,7 @@ async function refreshMatchForTarget(targetObj, missionId) {
       });
       if (seq !== finderState.matchReqSeq) return;
       if (payload && Array.isArray(payload.results)) {
+        if (payload.mission) ensureMissionInData(payload.mission);
         if (!finderState.data.results[targetObj.target_id]) finderState.data.results[targetObj.target_id] = {};
         finderState.data.results[targetObj.target_id][missionId] = payload.results;
         const cnt = payload.meta && payload.meta.earth_site_count ? payload.meta.earth_site_count : '?';
@@ -240,6 +251,17 @@ export async function ensureFinderDataLoaded(forceRefresh = false, { autoRender 
       finderState.data = backendRes.json;
       const cnt = backendRes.json.meta && backendRes.json.meta.earth_site_count ? backendRes.json.meta.earth_site_count : '?';
       finderSourceStatus.textContent = `Source: Live Backend API (${cnt} Earth sites)`;
+      if (autoRender) renderFinderUI(true);
+      return;
+    }
+
+    const catalog = await loadMissionCatalogMetadata();
+    if (catalog.source === 'csv') {
+      finderSourceStatus.textContent = 'Backend offline · Computing live CSV KNN → TOPSIS...';
+      const bundle = await computeBundleFromCSVs();
+      finderState.apiBase = null;
+      finderState.data = bundle;
+      finderSourceStatus.textContent = `Source: Live JS CSV (${bundle.meta.earth_site_count} Earth sites · ${bundle.missions.length} missions)`;
       if (autoRender) renderFinderUI(true);
       return;
     }
