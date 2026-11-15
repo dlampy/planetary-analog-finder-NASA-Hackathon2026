@@ -3,7 +3,7 @@
 An interactive 3D planetary visualization and machine-learning analog matching platform built for the **2026 NASA International Space Apps Challenge**:
 **[Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars](https://www.spaceappschallenge.org/2026/challenges/permanent-moon-base-locations-and-mars/)**.
 
-Live Demo (GitHub Pages): **https://dlampy.github.io/DLT_NASAHackathon2026/**
+Live Demo (GitHub Pages): **https://dlampy.github.io/planetary-analog-finder-NASA-Hackathon2026/**
 
 ---
 
