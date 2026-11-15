@@ -49,13 +49,15 @@ body {
 .top-left-launcher {
   pointer-events: auto;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
   flex-shrink: 0;
 }
 
 .top-left-terrain-btn {
   width: fit-content;
+  max-width: 100%;
   white-space: nowrap;
 }
 

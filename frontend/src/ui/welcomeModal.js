@@ -4,6 +4,7 @@ import { toggleToolsMenu } from './popups.js';
 import { setPickedPin3D } from '../scene/markersAndArcs.js';
 import { registerGlobePickCallback } from '../map2d/leafletMap.js';
 import {
+  registerDirectReselectCallback,
   registerReopenWizardCallback,
   runMissionAnalogSearch,
   toggleFinderPopup
@@ -32,21 +33,33 @@ let selectedPresetId = null;
 function setPickingHudVisible(visible, planetKey) {
   if (!targetPickerHud) return;
   targetPickerHud.hidden = !visible;
-  if (visible && targetPickerLabel) {
-    const label = planetKey === 'mars' ? 'Mars' : 'Moon';
-    targetPickerLabel.textContent = `Click any point on the 3D ${label} sphere to find all matching Earth analog sites`;
+  if (visible) {
+    const body = planetKey === 'mars' ? 'mars' : 'moon';
+    targetPickerHud.querySelectorAll('[data-picker-planet]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.pickerPlanet === body);
+    });
+    if (targetPickerLabel) {
+      const label = body === 'mars' ? 'Mars' : 'Moon';
+      targetPickerLabel.textContent = `Click any point on the 3D ${label} sphere to find Earth analog sites`;
+    }
   }
 }
 
-export function cancelGlobeTargetPicker(reopenWizard = false) {
+export function cancelGlobeTargetPicker(reopenPrevious = false) {
   appState.missionWizardState.pickingOnGlobe = false;
   setPickingHudVisible(false);
-  if (reopenWizard) openWelcomeModal();
+  if (!reopenPrevious) return;
+  if (appState.missionWizardState.pickerReturnTarget === 'finder') {
+    toggleFinderPopup(true, { skipLoad: true });
+  } else {
+    openWelcomeModal();
+  }
 }
 
-export function enterGlobeTargetPickerMode(planetKey, missionId) {
+export function enterGlobeTargetPickerMode(planetKey, missionId, returnTarget = 'wizard') {
   const planet = planetKey === 'mars' ? 'mars' : 'moon';
   appState.missionWizardState.planet = planet;
+  appState.missionWizardState.pickerReturnTarget = returnTarget === 'finder' ? 'finder' : 'wizard';
   if (missionId) appState.missionWizardState.missionId = missionId;
 
   closeWelcomeModal();
@@ -232,10 +245,23 @@ export function initWelcomeModal() {
     });
   });
 
+  if (targetPickerHud) {
+    targetPickerHud.querySelectorAll('[data-picker-planet]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const nextPlanet = btn.dataset.pickerPlanet === 'mars' ? 'mars' : 'moon';
+        enterGlobeTargetPickerMode(
+          nextPlanet,
+          appState.missionWizardState.missionId,
+          appState.missionWizardState.pickerReturnTarget
+        );
+      });
+    });
+  }
+
   const btnPickGlobe = document.getElementById('btn-wizard-pick-globe');
   if (btnPickGlobe) {
     btnPickGlobe.addEventListener('click', () => {
-      enterGlobeTargetPickerMode(appState.missionWizardState.planet, appState.missionWizardState.missionId);
+      enterGlobeTargetPickerMode(appState.missionWizardState.planet, appState.missionWizardState.missionId, 'wizard');
     });
   }
 
@@ -279,12 +305,17 @@ export function initWelcomeModal() {
     selectedPresetId = null;
     if (latInputEl) latInputEl.value = lat.toFixed(2);
     if (lonInputEl) lonInputEl.value = lon.toFixed(2);
+    const activeMission = appState.finderState.selectedMissionId || appState.missionWizardState.missionId;
     await runMissionAnalogSearch({
       targetBody: planet,
       lat,
       lon,
-      missionId: appState.missionWizardState.missionId
+      missionId: activeMission
     });
+  });
+
+  registerDirectReselectCallback(({ planet, missionId }) => {
+    enterGlobeTargetPickerMode(planet, missionId, 'finder');
   });
 
   registerReopenWizardCallback(() => openWelcomeModal());

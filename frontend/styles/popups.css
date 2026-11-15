@@ -206,6 +206,14 @@
   border-color: #38bdf8;
 }
 
+.finder-reselect-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
 .finder-telemetry-strip {
   font-size: 10.5px;
   color: #e2e8f0;
@@ -837,7 +845,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(15, 23, 42, 0.85);
 }
@@ -848,6 +857,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1 1 110px;
+  min-width: 0;
 }
 
 .map2d-send-btn {
@@ -869,8 +880,45 @@
 .map2d-fbtns {
   display: flex;
   align-items: center;
-  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
   flex-shrink: 0;
+}
+
+.map2d-finder-btn {
+  background: rgba(52, 211, 153, 0.16);
+  border: 1px solid rgba(52, 211, 153, 0.55);
+  color: #a7f3d0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 9px;
+  border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.16s ease;
+}
+
+.map2d-finder-btn:hover {
+  background: rgba(52, 211, 153, 0.28);
+  border-color: #34d399;
+  color: #fff;
+}
+
+.map2d-finder-btn[hidden] {
+  display: none;
+}
+
+.map2d-hint-strip {
+  padding: 5px 10px;
+  font-size: 10.5px;
+  color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.12);
+  border-bottom: 1px solid rgba(52, 211, 153, 0.28);
+}
+
+.map2d-hint-strip[hidden] {
+  display: none;
 }
 
 .map2d-terrain-btn {
@@ -1319,10 +1367,10 @@
    ========================================== */
 .terrain-popup {
   position: fixed;
-  top: 66px;
+  top: 112px;
   left: 22px;
   width: min(760px, calc(100vw - 44px));
-  height: min(520px, calc(100vh - 155px));
+  height: min(500px, calc(100vh - 205px));
   background: rgba(9, 14, 28, 0.96);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);

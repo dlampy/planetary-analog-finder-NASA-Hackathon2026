@@ -4,7 +4,7 @@ import { renderTopAnalogPins } from '../scene/markersAndArcs.js';
 import { applyAnalogLink } from '../ui/infoPanel.js';
 import { bringWindowToFront, clampWindowToViewport, makeWindowDraggable } from '../ui/windowManager.js';
 import { toggleToolsMenu } from '../ui/popups.js';
-import { open2DMapAt, registerAnalogPinClickCallback } from '../map2d/leafletMap.js';
+import { open2DMapAt, registerAnalogPinClickCallback, registerMap2DFinderCallback } from '../map2d/leafletMap.js';
 import { escapeHtml } from './csvAndTopsis.js';
 import { openTerrainComparison } from '../terrain/terrainComparatorPanel.js';
 import {
@@ -36,10 +36,17 @@ let finderDetailCard = null;
 let finderSourceStatus = null;
 let btnFinderCsv = null;
 let btnFinderPickGlobe = null;
+let btnFinderReselect = null;
+let btnFinderPick2d = null;
 let reopenWizardCallback = null;
+let directReselectCallback = null;
 
 export function registerReopenWizardCallback(cb) {
   reopenWizardCallback = typeof cb === 'function' ? cb : null;
+}
+
+export function registerDirectReselectCallback(cb) {
+  directReselectCallback = typeof cb === 'function' ? cb : null;
 }
 
 function ensureMissionInData(missionObj) {
@@ -429,6 +436,11 @@ export function renderFinderUI(autoFocusTop1 = false) {
   const slopeTxt = tFeat.slope_deg !== undefined ? `${tFeat.slope_deg}°` : '—';
   const voidTxt = tFeat.has_subsurface_void !== undefined ? `void=${tFeat.has_subsurface_void}` : '';
   finderTargetBadge.textContent = targetObj ? `${targetObj.planet.toUpperCase()} · ${slopeTxt}${voidTxt ? ' · ' + voidTxt : ''}` : '';
+  if (btnFinderReselect) {
+    btnFinderReselect.textContent = targetObj
+      ? `Reselect on ${targetObj.planet === 'mars' ? 'Mars' : 'Moon'}`
+      : 'Reselect 3D';
+  }
 
   if (finderTargetTelemetry) {
     const prof = targetObj && targetObj.resolved_profile;
@@ -535,6 +547,27 @@ export function initFinderPanel() {
   finderSourceStatus = document.getElementById('finder-source-status');
   btnFinderCsv = document.getElementById('btn-finder-csv');
   btnFinderPickGlobe = document.getElementById('btn-finder-pick-globe');
+  btnFinderReselect = document.getElementById('btn-finder-reselect');
+  btnFinderPick2d = document.getElementById('btn-finder-pick-2d');
+
+  function getActiveFinderTargetContext() {
+    const { finderState, missionWizardState } = appState;
+    const targetObj = finderState.data && finderState.data.targets.find(t => t.target_id === finderState.selectedTargetId);
+    const planet = targetObj && (targetObj.planet === 'mars' || targetObj.planet === 'moon')
+      ? targetObj.planet
+      : (missionWizardState.targetBody === 'mars' ? 'mars' : 'moon');
+    const missionId = finderState.selectedMissionId || missionWizardState.missionId || null;
+    const fallback = planet === 'mars'
+      ? { lat: 18.38, lon: 77.58, label: 'Jezero Crater' }
+      : { lat: -89.54, lon: 0.0, label: 'Lunar South Pole (Shackleton)' };
+    return {
+      planet,
+      missionId,
+      lat: targetObj && Number.isFinite(Number(targetObj.lat)) ? Number(targetObj.lat) : fallback.lat,
+      lon: targetObj && Number.isFinite(Number(targetObj.lon)) ? Number(targetObj.lon) : fallback.lon,
+      label: (targetObj && targetObj.target_name) || fallback.label
+    };
+  }
 
   makeWindowDraggable(finderPopup, finderPopup.querySelector('.finder-popup-header'));
 
@@ -559,11 +592,36 @@ export function initFinderPanel() {
       renderFinderUI(false);
     });
   }
+  if (btnFinderReselect) {
+    btnFinderReselect.addEventListener('click', () => {
+      if (!directReselectCallback) return;
+      const { planet, missionId } = getActiveFinderTargetContext();
+      directReselectCallback({ planet, missionId });
+    });
+  }
+  if (btnFinderPick2d) {
+    btnFinderPick2d.addEventListener('click', () => {
+      const { planet, lat, lon, label } = getActiveFinderTargetContext();
+      open2DMapAt(planet, lat, lon, label, null, { missionFinderHint: true });
+    });
+  }
   if (btnFinderPickGlobe) {
     btnFinderPickGlobe.addEventListener('click', () => {
       if (reopenWizardCallback) reopenWizardCallback();
     });
   }
+
+  registerMap2DFinderCallback(({ planet, lat, lon, label }) => {
+    const { finderState, missionWizardState } = appState;
+    const missionId = finderState.selectedMissionId || missionWizardState.missionId || null;
+    runMissionAnalogSearch({
+      targetBody: planet,
+      lat,
+      lon,
+      label: label || null,
+      missionId
+    });
+  });
 
   registerAnalogPinClickCallback(site => {
     const { finderState } = appState;

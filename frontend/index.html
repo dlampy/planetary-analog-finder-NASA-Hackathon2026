@@ -102,6 +102,10 @@
   </div>
 
   <div class="target-picker-hud" id="target-picker-hud" hidden role="status" aria-live="polite">
+    <div class="finder-filter-group" aria-label="Switch target planet while picking">
+      <button class="finder-filter-chip active" type="button" data-picker-planet="moon">Moon</button>
+      <button class="finder-filter-chip" type="button" data-picker-planet="mars">Mars</button>
+    </div>
     <span id="target-picker-label">Click any point on the 3D Moon sphere to find all matching Earth analog sites</span>
     <button class="target-picker-cancel" id="btn-picker-cancel" type="button">Cancel &amp; Return</button>
   </div>
@@ -111,6 +115,7 @@
 
   <div class="left-column" id="left-column">
     <div class="top-left-launcher">
+      <button class="ctrl-btn gps-menu-btn top-left-terrain-btn" id="btn-mission-wizard-menu" type="button">Mission Target Finder (Moon/Mars to Earth)</button>
       <button class="ctrl-btn gps-menu-btn top-left-terrain-btn" id="btn-terrain-menu" type="button">3D Terrain Comparator</button>
     </div>
 
@@ -159,7 +164,6 @@
       <div style="border-top:1px solid rgba(255,255,255,0.09);padding-top:10px">
         <div class="tools-section-title">Science &amp; Data Tools</div>
         <div class="tools-stack">
-          <button class="ctrl-btn gps-menu-btn" id="btn-mission-wizard-menu" type="button"><span>Mission Target Finder (Moon/Mars to Earth)</span></button>
           <button class="ctrl-btn gps-menu-btn" id="btn-finder-menu" type="button"><span>Analog Finder (ML)</span></button>
           <button class="ctrl-btn gps-menu-btn" id="btn-resources-menu" type="button"><span>NASA Data Sources</span></button>
           <button class="ctrl-btn gps-menu-btn" id="btn-gps-menu" type="button"><span>Dual GPS Link</span></button>
@@ -284,7 +288,11 @@
         </label>
         <div class="finder-target-row">
           <select class="gps-select" id="finder-target-select" style="margin-bottom:0"></select>
-          <button class="finder-pick-btn" id="btn-finder-pick-globe" type="button" title="Pick a point directly on Moon or Mars">Mission Wizard</button>
+          <button class="finder-pick-btn" id="btn-finder-reselect" type="button" title="Pick another coordinate directly on the 3D Moon or Mars sphere">Reselect 3D</button>
+        </div>
+        <div class="finder-reselect-row">
+          <button class="finder-filter-chip" id="btn-finder-pick-2d" type="button" title="Open 2D View map to zoom and pick Moon/Mars target coordinates">Pick from 2D View</button>
+          <button class="finder-filter-chip" id="btn-finder-pick-globe" type="button" title="Re-open full Welcome &amp; Mission Wizard">Mission Wizard</button>
         </div>
       </div>
 
@@ -383,10 +391,12 @@
       </div>
     </div>
     <div class="map2d-layers" id="map2d-layers"></div>
+    <div class="map2d-hint-strip" id="map2d-finder-hint" hidden>Click any point on 2D Moon/Mars map, then click "Use for Mission Finder".</div>
     <div id="map2d-canvas"></div>
     <div class="map2d-footer">
       <span class="map2d-source" id="map2d-source">Esri World Imagery</span>
       <div class="map2d-fbtns">
+        <button class="map2d-finder-btn" id="btn-map2d-finder" type="button" hidden title="Send this 2D Moon/Mars coordinate directly to Mission Target Finder">Use for Mission Finder</button>
         <button class="map2d-terrain-btn" id="btn-map2d-terrain" type="button" title="Open 3D Terrain relief for this coordinate">3D Terrain</button>
         <button class="map2d-send-btn" id="btn-map2d-send" type="button">Assign to GPS 1</button>
       </div>

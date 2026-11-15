@@ -27,6 +27,7 @@ export const appState = {
     planet: 'moon',
     missionId: 'rover_mobility',
     pickingOnGlobe: false,
+    pickerReturnTarget: 'wizard',
     customTarget: null
   },
 

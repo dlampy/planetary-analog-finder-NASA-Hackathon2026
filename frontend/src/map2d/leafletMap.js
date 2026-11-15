@@ -16,6 +16,8 @@ let map2dCoords = null;
 let map2dLayersEl = null;
 let map2dSource = null;
 let btnMap2dSend = null;
+let btnMap2dFinder = null;
+let map2dFinderHint = null;
 
 let leafletMap = null;
 let leafletTileLayer = null;
@@ -23,6 +25,7 @@ let leafletMarker = null;
 let leafletFootprintLayer = null;
 let globePickCallback = null;
 let analogPinClickCallback = null;
+let map2dFinderCallback = null;
 
 export function registerGlobePickCallback(cb) {
   globePickCallback = typeof cb === 'function' ? cb : null;
@@ -30,6 +33,10 @@ export function registerGlobePickCallback(cb) {
 
 export function registerAnalogPinClickCallback(cb) {
   analogPinClickCallback = typeof cb === 'function' ? cb : null;
+}
+
+export function registerMap2DFinderCallback(cb) {
+  map2dFinderCallback = typeof cb === 'function' ? cb : null;
 }
 
 function ensureLeafletMap() {
@@ -86,7 +93,7 @@ function apply2DTileLayer(planetKey, layerId, shouldResetZoom = false) {
   }
 }
 
-export function open2DMapAt(planetKey, lat, lon, label, footprintMode = null) {
+export function open2DMapAt(planetKey, lat, lon, label, footprintMode = null, opts = {}) {
   if (typeof L === 'undefined') return;
   if (!map2dPanel) {
     map2dPanel = document.getElementById('map2d-panel');
@@ -95,6 +102,8 @@ export function open2DMapAt(planetKey, lat, lon, label, footprintMode = null) {
     map2dLayersEl = document.getElementById('map2d-layers');
     map2dSource = document.getElementById('map2d-source');
     btnMap2dSend = document.getElementById('btn-map2d-send');
+    btnMap2dFinder = document.getElementById('btn-map2d-finder');
+    map2dFinderHint = document.getElementById('map2d-finder-hint');
   }
 
   const { map2dState } = appState;
@@ -111,6 +120,16 @@ export function open2DMapAt(planetKey, lat, lon, label, footprintMode = null) {
   map2dTitle.textContent = label ? `2D · ${label}` : `2D View · ${pName}`;
   map2dCoords.textContent = `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
   btnMap2dSend.textContent = planetKey === 'earth' ? 'Assign to GPS 1 (Earth)' : `Assign to GPS 2 (${planetKey === 'moon' ? 'Moon' : 'Mars'})`;
+
+  const isTargetBody = planetKey === 'moon' || planetKey === 'mars';
+  if (btnMap2dFinder) btnMap2dFinder.hidden = !isTargetBody;
+  if (map2dFinderHint) {
+    const showHint = Boolean(isTargetBody && opts && opts.missionFinderHint);
+    map2dFinderHint.hidden = !showHint;
+    if (showHint) {
+      map2dFinderHint.textContent = `Click any spot on 2D ${pName}, then click "Use for Mission Finder".`;
+    }
+  }
 
   map2dPanel.hidden = false;
   bringWindowToFront(map2dPanel);
@@ -186,6 +205,8 @@ export function initMap2DAndRaycaster() {
   map2dLayersEl = document.getElementById('map2d-layers');
   map2dSource = document.getElementById('map2d-source');
   btnMap2dSend = document.getElementById('btn-map2d-send');
+  btnMap2dFinder = document.getElementById('btn-map2d-finder');
+  map2dFinderHint = document.getElementById('map2d-finder-hint');
 
   makeWindowDraggable(map2dPanel, map2dPanel.querySelector('.map2d-header'));
 
@@ -207,6 +228,18 @@ export function initMap2DAndRaycaster() {
   btnMap2dSend.addEventListener('click', () => {
     populateGpsFrom2DMap(appState.map2dState.planetKey, appState.map2dState.lat, appState.map2dState.lon);
   });
+
+  if (btnMap2dFinder) {
+    btnMap2dFinder.addEventListener('click', () => {
+      const { planetKey, lat, lon, label } = appState.map2dState;
+      if (planetKey !== 'moon' && planetKey !== 'mars') return;
+      if (map2dFinderHint) map2dFinderHint.hidden = true;
+      setPickedPin3D(planetKey, lat, lon, planetKey === 'moon' ? 0xfacc15 : 0xfb7185);
+      if (map2dFinderCallback) {
+        map2dFinderCallback({ planet: planetKey, lat, lon, label });
+      }
+    });
+  }
 
   const btnMap2dTerrain = document.getElementById('btn-map2d-terrain');
   if (btnMap2dTerrain) {
