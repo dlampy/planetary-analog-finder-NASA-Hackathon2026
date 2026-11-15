@@ -1,4 +1,8 @@
-mission_id,mission_type,technology_to_test,footprint_mode,w_slope,w_temp,w_temp_swing,w_aridity_ice,w_void
-rover_mobility,Rover Surface Mobility,"Autonomous rover, wheeled suspension system & LiDAR obstacle-avoidance sensors",circle_5km,0.45,0.10,0.20,0.15,0.10
-ground_isru,Ground Extraction (ISRU),"Cryogenic ice drill, regolith excavation & in-situ resource extraction",square_1km,0.10,0.20,0.15,0.50,0.05
-lava_tube_habitat,Lava Tube Habitat,"Subsurface LiDAR survey drone & through-basalt wireless communications",circle_500m,0.15,0.10,0.10,0.15,0.50
+mission_id,mission_name,w_elevation,w_slope,w_roughness,w_void,w_lithology,w_mineral,w_basalt_pct,w_dust,w_temp_mean,w_temp_min,w_temp_max,w_temp_swing,w_thermal_inertia,w_albedo,w_solar,w_water_ice,w_ice_aridity,description
+rover_mobility,Rover Surface Mobility & Traverse,0.01,0.25,0.22,0.0,0.1,0.02,0.05,0.12,0.01,0.02,0.02,0.03,0.08,0.01,0.05,0.0,0.01,"Prioritizes slope stability, boulder roughness, dust sinkage, and load-bearing thermal inertia"
+isru_extraction,ISRU Volatile & Regolith Extraction,0.0,0.04,0.03,0.0,0.14,0.12,0.05,0.01,0.07,0.1,0.01,0.01,0.05,0.0,0.02,0.2,0.15,"Prioritizes water-ice presence, ice/aridity fraction, rock hardness, and cryogenic cold limits"
+subsurface_habitat,Subsurface Lava Tube & Habitat Base,0.01,0.07,0.05,0.35,0.18,0.02,0.14,0.01,0.03,0.02,0.0,0.04,0.08,0.0,0.0,0.0,0.0,"Heavily weights subterranean void presence, basaltic caprock integrity, and thermal inertia buffering"
+thermal_power_survival,Solar Power & Thermal Hardware Survival,0.03,0.02,0.02,0.0,0.0,0.0,0.0,0.1,0.05,0.14,0.12,0.16,0.06,0.08,0.22,0.0,0.0,"Focuses on solar irradiance, diurnal temperature swings, cryogenic minimums, and dust attenuation"
+eva_dust_operations,EVA Suit Mobility & Dust Mitigation,0.03,0.15,0.15,0.0,0.12,0.1,0.02,0.22,0.0,0.05,0.05,0.07,0.0,0.02,0.02,0.0,0.0,"Targets fine abrasive dust cover, rugged EVA slope/roughness hazards, and thermal suit cycling"
+astrobiology_survey,Astrobiology & Biosignature Detection,0.04,0.0,0.0,0.07,0.12,0.2,0.0,0.0,0.06,0.05,0.0,0.02,0.03,0.0,0.08,0.18,0.15,"Prioritizes mineral class preservation, cryogenic ice/aridity traps, UV irradiance, and cave refugia"
+balanced_survey,Balanced General Analog Survey,0.059,0.059,0.059,0.059,0.059,0.059,0.059,0.059,0.059,0.059,0.059,0.059,0.059,0.059,0.059,0.059,0.056,Uniform baseline weighting across all 17 shared planetary and terrestrial physical factors
