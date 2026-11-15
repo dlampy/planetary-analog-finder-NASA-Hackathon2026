@@ -2,7 +2,7 @@ import { appState } from '../state/appState.js';
 import { threeCtx } from './threeScene.js';
 
 // ==========================================
-// 5C. CỤM ĐIỀU HƯỚNG KIỂU GOOGLE EARTH
+// 5C. GOOGLE EARTH-STYLE NAVIGATION WIDGET
 // ==========================================
 let geCompassRing = null;
 let geNorthBtn = null;

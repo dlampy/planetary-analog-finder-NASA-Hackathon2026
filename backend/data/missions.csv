@@ -1,4 +1,4 @@
 mission_id,mission_type,technology_to_test,footprint_mode,w_slope,w_temp,w_temp_swing,w_aridity_ice,w_void
-rover_mobility,Rover Surface Mobility,"Robot tự hành, hệ thống treo bánh xe & cảm biến tránh vật cản LiDAR",circle_5km,0.45,0.10,0.20,0.15,0.10
-ground_isru,Ground Extraction (ISRU),"Máy khoan băng nhiệt cryogenic, khai thác regolith & tách tài nguyên tại chỗ",square_1km,0.10,0.20,0.15,0.50,0.05
-lava_tube_habitat,Lava Tube Habitat,"Drone LiDAR bay khảo sát hang ngầm & hệ thống liên lạc xuyên đá bazan",circle_500m,0.15,0.10,0.10,0.15,0.50
+rover_mobility,Rover Surface Mobility,"Autonomous rover, wheeled suspension system & LiDAR obstacle-avoidance sensors",circle_5km,0.45,0.10,0.20,0.15,0.10
+ground_isru,Ground Extraction (ISRU),"Cryogenic ice drill, regolith excavation & in-situ resource extraction",square_1km,0.10,0.20,0.15,0.50,0.05
+lava_tube_habitat,Lava Tube Habitat,"Subsurface LiDAR survey drone & through-basalt wireless communications",circle_500m,0.15,0.10,0.10,0.15,0.50

@@ -91,8 +91,10 @@ class AnalogMatchRequest(BaseModel):
     lat: Optional[float] = Field(None, ge=-90.0, le=90.0)
     lon: Optional[float] = Field(None, ge=-180.0, le=180.0)
     mission_id: str = "rover_mobility"
-    knn_k: int = Field(25, ge=5, le=100)
-    top_n: int = Field(10, ge=1, le=50)
+    knn_k: int = Field(25, ge=1, le=2000)
+    top_n: int = Field(10, ge=1, le=2000)
+    evaluate_all: bool = False
+    min_score: float = Field(0.0, ge=0.0, le=100.0)
 
 
 # ---------------------------------------------------------------------------
@@ -199,6 +201,32 @@ def list_planetary_targets(body: Optional[str] = None) -> List[Dict[str, Any]]:
     ]
 
 
+@router.get("/missions")
+def list_missions_from_csv() -> List[Dict[str, Any]]:
+    """Returns mission types and 5-factor TOPSIS weights directly from missions.csv."""
+    _, _, ph_missions, _ = _load_placeholder_frames()
+    if ph_missions.empty:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="missions.csv catalog not loaded",
+        )
+    return [
+        {
+            "mission_id": str(row["mission_id"]),
+            "mission_type": str(row["mission_type"]),
+            "technology_to_test": str(row.get("technology_to_test", "")),
+            "footprint_mode": str(row.get("footprint_mode", "square_1km")),
+            "w_slope": float(row.get("w_slope", 0.0)),
+            "w_temp": float(row.get("w_temp", 0.0)),
+            "w_temp_swing": float(row.get("w_temp_swing", 0.0)),
+            "w_aridity_ice": float(row.get("w_aridity_ice", 0.0)),
+            "w_void": float(row.get("w_void", 0.0)),
+            "weights": compute_placeholder_weights(row),
+        }
+        for _, row in ph_missions.iterrows()
+    ]
+
+
 @router.get("/analogs/bundle")
 def get_analogs_bundle() -> Dict[str, Any]:
     """Computes and returns the full analog matching bundle from backend/data CSVs."""
@@ -276,6 +304,15 @@ def match_analogs_live(payload: AnalogMatchRequest) -> Dict[str, Any]:
             "lat": float(payload.lat),
             "lon": float(payload.lon),
             "features": mapped_features,
+            "resolved_profile": {
+                "terrain_type": shared.get("terrain_type"),
+                "dominant_lithology": shared.get("dominant_lithology"),
+                "basalt_fraction_pct": shared.get("basalt_fraction_pct"),
+                "elevation_m": shared.get("elevation_m"),
+                "water_ice_presence": shared.get("water_ice_presence"),
+                "surface_ice_fraction_pct": shared.get("surface_ice_fraction_pct"),
+                "exclusive": resolved.get("exclusive", {}),
+            },
         }
     else:
         raise HTTPException(
@@ -283,14 +320,19 @@ def match_analogs_live(payload: AnalogMatchRequest) -> Dict[str, Any]:
             detail="Provide either target_id or (target_body, lat, lon)",
         )
 
+    effective_knn_k = len(ph_earth) if payload.evaluate_all else payload.knn_k
+    effective_top_n = len(ph_earth) if payload.evaluate_all else payload.top_n
+
     ranked = match_placeholder_target(
         earth_df=ph_earth,
         target_row=target_row,
         mission_row=mission_row,
         site_tests_df=ph_tests,
-        knn_k=payload.knn_k,
-        top_n=payload.top_n,
+        knn_k=effective_knn_k,
+        top_n=effective_top_n,
     )
+    if payload.min_score > 0.0:
+        ranked = [item for item in ranked if float(item.get("topsis_score", 0.0)) >= payload.min_score]
 
     return {
         "meta": {
@@ -298,7 +340,13 @@ def match_analogs_live(payload: AnalogMatchRequest) -> Dict[str, Any]:
             "active_features": PLACEHOLDER_FEATURES,
             "derived_features": ["aridity_ice_idx", "has_subsurface_void", "temp_swing_c"],
             "earth_site_count": int(len(ph_earth)),
-            "algorithm": "Stage 1: Weighted BallTree KNN (Top 25) -> Stage 2: Analog TOPSIS (Top 10)",
+            "evaluated_count": int(min(effective_knn_k, len(ph_earth))),
+            "returned_count": int(len(ranked)),
+            "evaluate_all": bool(payload.evaluate_all),
+            "algorithm": (
+                f"Stage 1: Weighted BallTree KNN (k={min(effective_knn_k, len(ph_earth))}) "
+                f"-> Stage 2: Analog TOPSIS (n={len(ranked)})"
+            ),
         },
         "target": target_obj,
         "mission": {

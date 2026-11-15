@@ -49,10 +49,10 @@ export function applyAnalogLink({ earthLat, earthLon, targetPlanet, targetLat, t
   dualLinkState.targetLat = targetLat;
   dualLinkState.targetLon = targetLon;
 
-  dualLinkState.earthPin = createCustomPin('earth', earthLat, earthLon, 'GPS 1 · Trái Đất', 0xf43f5e);
+  dualLinkState.earthPin = createCustomPin('earth', earthLat, earthLon, 'GPS 1 · Earth', 0xf43f5e);
   dualLinkState.targetPin = createCustomPin(targetPlanet, targetLat, targetLon, `GPS 2 · ${PLANET_CONFIG[targetPlanet].title}`, 0xfacc15);
 
-  // Xoay 2 điểm GPS hướng vào nhau ở mặt trước
+  // Rotate both GPS points toward each other on the front hemisphere
   rotateSurfaceToFront('earth', earthLat, earthLon, 0.32);
   rotateSurfaceToFront(targetPlanet, targetLat, targetLon, -0.32);
 
@@ -71,7 +71,7 @@ export function applyAnalogLink({ earthLat, earthLon, targetPlanet, targetLat, t
     }
   });
 
-  // Tắt autoRotate để giữ 2 hành tinh cân đối trái/phải khi xem tia liên kết
+  // Disable autoRotate to keep both planets balanced left/right while viewing the link arc
   threeCtx.controls.autoRotate = false;
   document.getElementById('btn-autorotate').classList.remove('active');
 
@@ -86,9 +86,9 @@ export function applyAnalogLink({ earthLat, earthLon, targetPlanet, targetLat, t
     btn.classList.toggle('active', btn.dataset.planet === 'earth' || btn.dataset.planet === targetPlanet);
   });
 
-  const targetLabel = targetPlanet === 'moon' ? 'Mặt Trăng' : 'Sao Hỏa';
+  const targetLabel = targetPlanet === 'moon' ? 'Moon' : 'Mars';
   document.getElementById('dual-link-text').textContent =
-    `🔗 Trái Đất (${earthLat.toFixed(2)}°, ${earthLon.toFixed(2)}°) ⟷ ${targetLabel} (${targetLat.toFixed(2)}°, ${targetLon.toFixed(2)}°)`;
+    `🔗 Earth (${earthLat.toFixed(2)}°, ${earthLon.toFixed(2)}°) ⟷ ${targetLabel} (${targetLat.toFixed(2)}°, ${targetLon.toFixed(2)}°)`;
   document.getElementById('dual-link-banner').hidden = false;
   updateInfoPanel('earth');
 }
@@ -132,16 +132,16 @@ export function updateInfoPanel(key) {
   const texStatusEl = document.getElementById('texture-status');
   if (st.status === 'real') {
     texStatusEl.className = 'texture-status real';
-    texStatusEl.textContent = `✓ Đang dùng ảnh thật: ${st.fileName}`;
+    texStatusEl.textContent = `✓ Using real imagery: ${st.fileName}`;
   } else if (st.status === 'loading') {
     texStatusEl.className = 'texture-status';
-    texStatusEl.textContent = '⏳ Đang tải ảnh vệ tinh từ assets/textures/...';
+    texStatusEl.textContent = '⏳ Loading satellite imagery from assets/textures/...';
   } else if (window.location.protocol === 'file:') {
     texStatusEl.className = 'texture-status fallback';
-    texStatusEl.textContent = '⚠ Đang mở file://. Hãy chạy start_local.bat hoặc bấm nút bên dưới để chọn ảnh.';
+    texStatusEl.textContent = '⚠ Opened via file://. Run start_local.bat or click below to pick a local texture.';
   } else {
     texStatusEl.className = 'texture-status fallback';
-    texStatusEl.textContent = `⚠ Chưa có ảnh (${cfg.textures.color.slice(0, 2).join(' hoặc ')}) trong assets/textures/.`;
+    texStatusEl.textContent = `⚠ Texture not found (${cfg.textures.color.slice(0, 2).join(' or ')}) in assets/textures/.`;
   }
 }
 
@@ -154,7 +154,7 @@ export function focusCameraOnLatLon(key, lat, lon) {
   const surface = group.getObjectByName('surface');
   if (!surface) return;
 
-  // Tạm tắt tự xoay để người dùng nhìn rõ điểm vừa chọn
+  // Pause auto-rotate so the user can clearly inspect the selected site
   threeCtx.controls.autoRotate = false;
   document.getElementById('btn-autorotate').classList.remove('active');
 
@@ -202,7 +202,7 @@ export function applyAxisMode() {
 }
 
 export function initControlsAndDock() {
-  // Cho phép đồng đội gọi trực tiếp từ script hoặc DevTools
+  // Allow teammates to invoke directly from scripts or DevTools
   window.linkAnalogCoordinates = function (earthCoord, targetPlanet, targetCoord) {
     const e = typeof earthCoord === 'string' ? parseGpsInput(earthCoord) : earthCoord;
     const t = typeof targetCoord === 'string' ? parseGpsInput(targetCoord) : targetCoord;

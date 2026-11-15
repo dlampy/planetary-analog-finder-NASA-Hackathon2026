@@ -42,7 +42,7 @@ function createStarfield(scene) {
 }
 
 // ==========================================
-// 2. KHỞI TẠO CẢNH THREE.JS & ÁNH SÁNG
+// 2. INITIALIZE THREE.JS SCENE & LIGHTING
 // ==========================================
 export function initThreeScene(statusText) {
   const container = document.getElementById('canvas-container');
@@ -60,7 +60,7 @@ export function initThreeScene(statusText) {
     container.appendChild(renderer.domElement);
   } catch (err) {
     if (statusText) {
-      statusText.textContent = 'Thiết bị chưa bật WebGL để hiển thị 3D: ' + (err && err.message ? err.message : err);
+      statusText.textContent = 'WebGL is not enabled on this device for 3D rendering: ' + (err && err.message ? err.message : err);
     }
     return null;
   }

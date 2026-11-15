@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,7 +13,99 @@
 <body>
   <div id="status-overlay">
     <div class="spinner"></div>
-    <div id="status-text">Đang tải dữ liệu bản đồ 3D...</div>
+    <div id="status-text">Loading 3D planetary data...</div>
+  </div>
+
+  <div class="welcome-overlay" id="welcome-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+    <div class="welcome-card">
+      <div class="welcome-header">
+        <div>
+          <span class="welcome-badge">NASA Space Apps 2026 · Mission Analog Finder</span>
+          <h2 id="welcome-title">Plan Your Planetary Analog Mission</h2>
+          <p class="welcome-subtitle">Choose <strong>Moon</strong> or <strong>Mars</strong>, select a mission type from <code>missions.csv</code>, and pick target coordinates on that world to find every matching <strong>Earth</strong> analog testbed site.</p>
+        </div>
+        <button class="gps-close-x" id="btn-welcome-close" type="button" title="Close welcome screen">✕</button>
+      </div>
+
+      <div class="welcome-body">
+        <section class="wizard-step" aria-label="Step 1: Select Destination Planet">
+          <div class="wizard-step-header">
+            <span class="wizard-step-num">1</span>
+            <span class="wizard-step-title">Where is your mission heading?</span>
+            <span class="wizard-step-hint">Choose 1 of 2 worlds</span>
+          </div>
+          <div class="welcome-planet-grid" id="welcome-planet-grid">
+            <button class="welcome-planet-card moon active" type="button" data-wizard-planet="moon">
+              <div class="welcome-planet-top">
+                <span class="welcome-planet-icon">🌕</span>
+                <div>
+                  <div class="welcome-planet-name">Moon (Artemis Target)</div>
+                  <div class="welcome-planet-meta">Hard vacuum · 0.165g · Polar PSR ice &amp; lava tube skylights</div>
+                </div>
+              </div>
+            </button>
+            <button class="welcome-planet-card mars" type="button" data-wizard-planet="mars">
+              <div class="welcome-planet-top">
+                <span class="welcome-planet-icon">🔴</span>
+                <div>
+                  <div class="welcome-planet-name">Mars (Red Planet)</div>
+                  <div class="welcome-planet-meta">CO₂ tenuous air · 0.38g · Ancient lakebeds, dunes &amp; ice caps</div>
+                </div>
+              </div>
+            </button>
+          </div>
+        </section>
+
+        <section class="wizard-step" aria-label="Step 2: Select Mission Type">
+          <div class="wizard-step-header">
+            <span class="wizard-step-num">2</span>
+            <span class="wizard-step-title">Select Mission Type</span>
+            <span class="wizard-step-hint" id="welcome-mission-source">Loading from missions.csv...</span>
+          </div>
+          <div class="welcome-mission-grid" id="welcome-mission-list"></div>
+        </section>
+
+        <section class="wizard-step" aria-label="Step 3: Pick Location on Selected Planet">
+          <div class="wizard-step-header">
+            <span class="wizard-step-num">3</span>
+            <span class="wizard-step-title">Choose Point on <span id="welcome-step3-planet">Moon</span></span>
+            <span class="wizard-step-hint">Click on the 3D globe or pick coordinates</span>
+          </div>
+          <div class="welcome-location-panel">
+            <div class="welcome-pick-row">
+              <button class="welcome-pick-globe-btn" id="btn-wizard-pick-globe" type="button">🎯 Click Point Directly on 3D <span id="welcome-pick-planet-label">Moon</span></button>
+            </div>
+            <div class="welcome-preset-label">Or select a catalog site on <span id="welcome-preset-planet-label">Moon</span>:</div>
+            <div class="welcome-preset-grid" id="welcome-preset-list"></div>
+            <div class="welcome-coords-row">
+              <label class="wizard-coord-field">
+                <span>Latitude (-90..90)</span>
+                <input class="gps-input" id="wizard-lat-input" type="number" step="0.01" min="-90" max="90" value="-89.54" />
+              </label>
+              <label class="wizard-coord-field">
+                <span>Longitude (-180..180)</span>
+                <input class="gps-input" id="wizard-lon-input" type="number" step="0.01" min="-180" max="180" value="0.00" />
+              </label>
+              <button class="welcome-btn-primary wizard-find-btn" id="btn-wizard-find" type="button">🔎 Find Earth Matches</button>
+            </div>
+            <div class="gps-error" id="wizard-error" hidden></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="welcome-footer">
+        <div class="welcome-always-note">🔄 Shown automatically on reload · Also accessible anytime in <strong>⚙️ Settings</strong></div>
+        <div class="welcome-footer-actions">
+          <button class="welcome-btn-secondary" id="btn-welcome-finder" type="button">🧪 Open Analog Finder</button>
+          <button class="welcome-btn-primary" id="btn-welcome-explore" type="button">🌍 Explore 3D Freely</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="target-picker-hud" id="target-picker-hud" hidden role="status" aria-live="polite">
+    <span id="target-picker-label">🎯 Click any point on the 3D Moon sphere to find all matching Earth analog sites</span>
+    <button class="target-picker-cancel" id="btn-picker-cancel" type="button">Cancel &amp; Return</button>
   </div>
 
   <div id="canvas-container"></div>
@@ -23,152 +115,154 @@
     <div class="brand">
       <div class="brand-top-row">
         <span class="brand-badge">NASA Space Apps 2026 · 3D Explorer</span>
-        <button class="left-collapse-btn" id="btn-left-hide" type="button" title="Ẩn toàn bộ khung thông tin bên trái">« Ẩn</button>
+        <button class="left-collapse-btn" id="btn-left-hide" type="button" title="Hide the entire left info panel">« Hide</button>
       </div>
-      <h1>Mô hình 3D Trái Đất, Mặt Trăng &amp; Sao Hỏa</h1>
-      <p>Kéo để xoay · Cuộn để zoom · Click 3 ô bên dưới (hoặc phím 1, 2, 3)</p>
+      <h1>3D Earth, Moon &amp; Mars Explorer</h1>
+      <p>Drag to rotate · Scroll to zoom · Click 3 cards below (or keys 1, 2, 3)</p>
     </div>
 
     <aside class="info-panel" id="info-panel">
       <div class="info-tag" id="info-tag"></div>
-      <h2 id="info-title">Trái Đất</h2>
+      <h2 id="info-title">Earth</h2>
       <p class="info-desc" id="info-desc"></p>
       <div class="stats-grid" id="stats-grid"></div>
 
       <div class="analogs-section">
-        <div class="analogs-title" id="analogs-title">Địa điểm trọng tâm</div>
+        <div class="analogs-title" id="analogs-title">Featured Sites</div>
         <div id="analogs-list"></div>
       </div>
 
-      <div class="texture-status" id="texture-status">Đang kiểm tra dữ liệu bản đồ...</div>
-      <button class="local-upload-btn" id="btn-pick-texture" type="button">📂 Chọn ảnh bản đồ từ máy</button>
+      <div class="texture-status" id="texture-status">Checking planetary map imagery...</div>
+      <button class="local-upload-btn" id="btn-pick-texture" type="button">📂 Pick map image from device</button>
       <input type="file" id="local-texture-input" accept="image/*" hidden />
     </aside>
   </div>
 
   <div class="right-column" id="right-settings-wrap">
-    <button class="ctrl-btn gps-menu-btn" id="btn-settings-menu" type="button" aria-expanded="false" aria-controls="settings-menu" title="Mở bảng Cài đặt &amp; Công cụ">⚙️ Cài đặt ▾</button>
+    <button class="ctrl-btn gps-menu-btn" id="btn-settings-menu" type="button" aria-expanded="false" aria-controls="settings-menu" title="Open Settings &amp; Tools">⚙️ Settings ▾</button>
 
     <div class="settings-drawer" id="settings-menu" hidden>
       <div>
-        <div class="settings-section-title">Hiển thị &amp; Điều khiển 3D</div>
+        <div class="settings-section-title">3D Display &amp; Controls</div>
         <div class="settings-grid">
-          <button class="ctrl-btn" id="btn-autorotate" type="button">⟳ Tự xoay</button>
-          <button class="ctrl-btn active" id="btn-upright-axis" type="button" title="Giữ trục Bắc–Nam của các hành tinh luôn thẳng đứng (0°)">⊥ Trục thẳng</button>
-          <button class="ctrl-btn active" id="btn-markers" type="button">📍 Điểm Analog</button>
-          <button class="ctrl-btn" id="btn-wireframe" type="button">▦ Lưới 3D</button>
-          <button class="ctrl-btn active" id="btn-toggle-left-panel" type="button" title="Ẩn / Hiện khung thông tin bên trái">◧ Bảng thông tin</button>
-          <button class="ctrl-btn" id="btn-reset" type="button">⌖ Đặt lại góc nhìn</button>
+          <button class="ctrl-btn" id="btn-autorotate" type="button">⟳ Auto-Rotate</button>
+          <button class="ctrl-btn active" id="btn-upright-axis" type="button" title="Keep planetary North–South spin axis upright (0°)">⊥ Upright Axis</button>
+          <button class="ctrl-btn active" id="btn-markers" type="button">📍 Analog Pins</button>
+          <button class="ctrl-btn" id="btn-wireframe" type="button">▦ 3D Wireframe</button>
+          <button class="ctrl-btn active" id="btn-toggle-left-panel" type="button" title="Show / Hide the left info panel">◧ Info Panel</button>
+          <button class="ctrl-btn" id="btn-reset" type="button">⌖ Reset View</button>
         </div>
       </div>
 
       <div style="border-top:1px solid rgba(255,255,255,0.09);padding-top:10px">
-        <div class="settings-section-title">Công cụ Khoa học &amp; Dữ liệu</div>
+        <div class="settings-section-title">Science &amp; Data Tools</div>
         <div class="settings-stack">
+          <button class="ctrl-btn gps-menu-btn" id="btn-mission-wizard-menu" type="button"><span>🎯 Mission Target Finder (Moon/Mars → Earth)</span><span style="color:#38bdf8">↗</span></button>
           <button class="ctrl-btn gps-menu-btn" id="btn-finder-menu" type="button"><span>🧪 Analog Finder (ML)</span><span style="color:#38bdf8">↗</span></button>
-          <button class="ctrl-btn gps-menu-btn" id="btn-resources-menu" type="button"><span>📚 Nguồn dữ liệu NASA</span><span style="color:#38bdf8">↗</span></button>
-          <button class="ctrl-btn gps-menu-btn" id="btn-gps-menu" type="button"><span>☰ Nhập 2 tọa độ GPS</span><span style="color:#38bdf8">↗</span></button>
+          <button class="ctrl-btn gps-menu-btn" id="btn-resources-menu" type="button"><span>📚 NASA Data Sources</span><span style="color:#38bdf8">↗</span></button>
+          <button class="ctrl-btn gps-menu-btn" id="btn-gps-menu" type="button"><span>☰ Dual GPS Link</span><span style="color:#38bdf8">↗</span></button>
+          <button class="ctrl-btn gps-menu-btn" id="btn-welcome-menu" type="button"><span>👋 Welcome &amp; Mission Wizard</span><span style="color:#38bdf8">↗</span></button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Cụm điều hướng kiểu Google Earth (La bàn N + D-Pad + Thanh Zoom) -->
-  <div class="ge-nav" id="ge-nav" aria-label="Điều hướng kiểu Google Earth">
-    <div class="ge-compass-wrap" title="Kéo vòng để xoay ngang · Bấm N để căn hướng Bắc &amp; dựng thẳng trục">
+  <!-- Google Earth-style Navigation Widget (Compass N + D-Pad + Zoom Slider) -->
+  <div class="ge-nav" id="ge-nav" aria-label="Google Earth-style navigation">
+    <div class="ge-compass-wrap" title="Drag ring to rotate azimuth · Click N to align North &amp; upright axis">
       <div class="ge-compass-ring" id="ge-compass-ring">
-        <button class="ge-north-btn" id="ge-north-btn" type="button" title="Bấm N: Trục thẳng 0° &amp; hướng Bắc lên trên">N</button>
+        <button class="ge-north-btn" id="ge-north-btn" type="button" title="Click N: Upright 0° axis &amp; North up">N</button>
       </div>
-      <div class="ge-orb-pad" aria-label="Nghiêng / nhìn quanh">
-        <button class="ge-dir-btn up" data-ge-action="look-up" type="button" title="Nhìn lên trên">▲</button>
-        <button class="ge-dir-btn down" data-ge-action="look-down" type="button" title="Nhìn xuống dưới">▼</button>
-        <button class="ge-dir-btn left" data-ge-action="look-left" type="button" title="Xoay nhìn sang trái">◀</button>
-        <button class="ge-dir-btn right" data-ge-action="look-right" type="button" title="Xoay nhìn sang phải">▶</button>
+      <div class="ge-orb-pad" aria-label="Tilt / look around">
+        <button class="ge-dir-btn up" data-ge-action="look-up" type="button" title="Look up">▲</button>
+        <button class="ge-dir-btn down" data-ge-action="look-down" type="button" title="Look down">▼</button>
+        <button class="ge-dir-btn left" data-ge-action="look-left" type="button" title="Look left">◀</button>
+        <button class="ge-dir-btn right" data-ge-action="look-right" type="button" title="Look right">▶</button>
         <span class="ge-look-eye" aria-hidden="true"></span>
       </div>
     </div>
 
-    <div class="ge-dpad" title="Nhấn giữ để xoay quả cầu 4 hướng · Chấm giữa để đặt lại">
-      <button class="ge-dir-btn up" data-ge-action="pan-up" type="button" title="Lên phía Bắc">▲</button>
-      <button class="ge-dir-btn down" data-ge-action="pan-down" type="button" title="Xuống phía Nam">▼</button>
-      <button class="ge-dir-btn left" data-ge-action="pan-left" type="button" title="Sang Tây">◀</button>
-      <button class="ge-dir-btn right" data-ge-action="pan-right" type="button" title="Sang Đông">▶</button>
-      <button class="ge-center-dot" id="ge-dpad-center" type="button" title="Đặt lại góc nhìn"></button>
+    <div class="ge-dpad" title="Hold to pan globe in 4 directions · Center dot to reset">
+      <button class="ge-dir-btn up" data-ge-action="pan-up" type="button" title="Pan North">▲</button>
+      <button class="ge-dir-btn down" data-ge-action="pan-down" type="button" title="Pan South">▼</button>
+      <button class="ge-dir-btn left" data-ge-action="pan-left" type="button" title="Pan West">◀</button>
+      <button class="ge-dir-btn right" data-ge-action="pan-right" type="button" title="Pan East">▶</button>
+      <button class="ge-center-dot" id="ge-dpad-center" type="button" title="Reset view"></button>
     </div>
 
-    <div class="ge-zoom-wrap" title="Phóng to / Thu nhỏ">
-      <button class="ge-zoom-btn" id="ge-zoom-in" data-ge-action="zoom-in" type="button" title="Phóng to (+)">+</button>
+    <div class="ge-zoom-wrap" title="Zoom In / Out">
+      <button class="ge-zoom-btn" id="ge-zoom-in" data-ge-action="zoom-in" type="button" title="Zoom in (+)">+</button>
       <div class="ge-zoom-track" id="ge-zoom-track">
         <div class="ge-zoom-thumb" id="ge-zoom-thumb"></div>
       </div>
-      <button class="ge-zoom-btn" id="ge-zoom-out" data-ge-action="zoom-out" type="button" title="Thu nhỏ (-)">−</button>
+      <button class="ge-zoom-btn" id="ge-zoom-out" data-ge-action="zoom-out" type="button" title="Zoom out (-)">−</button>
     </div>
   </div>
 
   <div class="resources-popup" id="resources-popup" hidden>
-    <div class="resources-popup-header" title="Nhấn giữ chuột trái để di chuyển cửa sổ">
-      <span class="gps-popup-title"><span class="drag-grip" aria-hidden="true">⋮⋮</span>📚 Nguồn Dữ Liệu Mở (NASA &amp; Đối tác)</span>
-      <button class="gps-close-x" id="btn-resources-close" type="button" title="Đóng">✕</button>
+    <div class="resources-popup-header" title="Hold left click to drag window">
+      <span class="gps-popup-title"><span class="drag-grip" aria-hidden="true">⋮⋮</span>📚 Open Data Sources (NASA &amp; Partners)</span>
+      <button class="gps-close-x" id="btn-resources-close" type="button" title="Close">✕</button>
     </div>
     <div class="resources-body">
       <div>
-        <div class="res-group-title">NASA · Dữ liệu Trái Đất (Earth)</div>
+        <div class="res-group-title">NASA · Earth Data</div>
         <div class="res-list">
           <a class="res-link-card" href="https://search.earthdata.nasa.gov/" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>NASA Earthdata Search</span><span>Mở ↗</span></div>
-            <div class="res-link-desc">Cổng chính tìm kiếm và tải bộ dữ liệu quan sát Khoa học Trái Đất của NASA (DEM, nhiệt độ, độ ẩm, băng tuyết...).</div>
+            <div class="res-link-name"><span>NASA Earthdata Search</span><span>Open ↗</span></div>
+            <div class="res-link-desc">Primary portal for discovering and downloading NASA Earth Science observation datasets (DEM, temperature, moisture, snow/ice...).</div>
           </a>
           <a class="res-link-card" href="https://worldview.earthdata.nasa.gov/index.html" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>NASA Worldview (GIBS)</span><span>Mở ↗</span></div>
-            <div class="res-link-desc">Trình xem ảnh vệ tinh và các lớp môi trường NASA theo thời gian thực (tích hợp trực tiếp lớp NASA GIBS MODIS trong bản đồ 2D).</div>
+            <div class="res-link-name"><span>NASA Worldview (GIBS)</span><span>Open ↗</span></div>
+            <div class="res-link-desc">Real-time NASA satellite imagery and environmental layers viewer (NASA GIBS MODIS layer integrated directly in the 2D map).</div>
           </a>
         </div>
       </div>
 
       <div>
-        <div class="res-group-title">NASA · Mặt Trăng &amp; Sao Hỏa (Moon &amp; Mars)</div>
+        <div class="res-group-title">NASA · Moon &amp; Mars</div>
         <div class="res-list">
           <a class="res-link-card" href="https://pds.nasa.gov/" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>NASA Planetary Data System (PDS)</span><span>Mở ↗</span></div>
-            <div class="res-link-desc">Kho lưu trữ khoa học hành tinh dài hạn từ tàu quỹ đạo, tàu đổ bộ và rover (ảnh, địa chất, khí quyển, bản đồ).</div>
+            <div class="res-link-name"><span>NASA Planetary Data System (PDS)</span><span>Open ↗</span></div>
+            <div class="res-link-desc">Long-term planetary science archive from orbiters, landers, and rovers (imagery, geology, atmosphere, cartography).</div>
           </a>
           <a class="res-link-card" href="https://pds-geosciences.wustl.edu/missions/lro/" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>NASA Lunar Reconnaissance Orbiter (LRO)</span><span>Mở ↗</span></div>
-            <div class="res-link-desc">Quan sát Mặt Trăng từ LROC, LOLA (địa hình laser), Diviner, LEND và radar Mini-RF.</div>
+            <div class="res-link-name"><span>NASA Lunar Reconnaissance Orbiter (LRO)</span><span>Open ↗</span></div>
+            <div class="res-link-desc">Lunar observations from LROC, LOLA (laser altimetry), Diviner, LEND, and Mini-RF radar.</div>
           </a>
           <a class="res-link-card" href="https://pds-geosciences.wustl.edu/missions/lro/diviner.htm" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>NASA LRO Diviner Lunar Data</span><span>Mở ↗</span></div>
-            <div class="res-link-desc">Bản đồ nhiệt độ bề mặt Mặt Trăng và sản phẩm cực/tài nguyên dùng đối chiếu vùng cực lạnh &amp; băng trên Trái Đất.</div>
+            <div class="res-link-name"><span>NASA LRO Diviner Lunar Data</span><span>Open ↗</span></div>
+            <div class="res-link-desc">Lunar surface temperature maps and polar/resource products used to benchmark Earth's cold and icy analog regions.</div>
           </a>
         </div>
       </div>
 
       <div>
-        <div class="res-group-title">Cơ quan Vũ trụ Đối tác (CSA · ESA · JAXA)</div>
+        <div class="res-group-title">Partner Space Agencies (CSA · ESA · JAXA)</div>
         <div class="res-list">
           <a class="res-link-card" href="https://donnees-data.asc-csa.gc.ca/en/dataset/rcm" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>CSA · RADARSAT Constellation Mission (RCM)</span><span>Mở ↗</span></div>
-            <div class="res-link-desc">Dữ liệu radar quan sát Trái Đất ngày/đêm xuyên mây của Cơ quan Vũ trụ Canada.</div>
+            <div class="res-link-name"><span>CSA · RADARSAT Constellation Mission (RCM)</span><span>Open ↗</span></div>
+            <div class="res-link-desc">Day/night cloud-penetrating Earth observation radar data from the Canadian Space Agency.</div>
           </a>
           <a class="res-link-card" href="https://donnees-data.asc-csa.gc.ca/en/dataset/radarsat1" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>CSA · RADARSAT 1 Open Archive</span><span>Mở ↗</span></div>
-            <div class="res-link-desc">Kho ảnh radar khẩu độ tổng hợp (SAR) mở xuyên mây, khói và sương mù.</div>
+            <div class="res-link-name"><span>CSA · RADARSAT 1 Open Archive</span><span>Open ↗</span></div>
+            <div class="res-link-desc">Open Synthetic Aperture Radar (SAR) archive penetrating clouds, smoke, and fog.</div>
           </a>
           <a class="res-link-card" href="https://github.com/asc-csa/Synthetic_Aperture_Radar_Tutorial" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>CSA · SAR Python &amp; QGIS Tutorial</span><span>Mở ↗</span></div>
-            <div class="res-link-desc">Hướng dẫn Python &amp; QGIS truy cập và xử lý ảnh SAR cho huấn luyện mô hình ML.</div>
+            <div class="res-link-name"><span>CSA · SAR Python &amp; QGIS Tutorial</span><span>Open ↗</span></div>
+            <div class="res-link-desc">Python &amp; QGIS guides for accessing and processing SAR imagery for ML model training.</div>
           </a>
           <a class="res-link-card" href="https://dataspace.copernicus.eu/" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>ESA · Copernicus Data Space Ecosystem</span><span>Mở ↗</span></div>
-            <div class="res-link-desc">Dữ liệu vệ tinh Sentinel miễn phí (đất liền, đại dương, khí quyển) của Cơ quan Vũ trụ Châu Âu.</div>
+            <div class="res-link-name"><span>ESA · Copernicus Data Space Ecosystem</span><span>Open ↗</span></div>
+            <div class="res-link-desc">Free Sentinel satellite data (land, ocean, atmosphere) from the European Space Agency.</div>
           </a>
           <a class="res-link-card" href="https://opensciencedata.esa.int/" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>ESA · Open Science Catalog</span><span>Mở ↗</span></div>
-            <div class="res-link-desc">Danh mục các bộ dữ liệu, sản phẩm và quy trình khoa học Trái Đất mở của ESA.</div>
+            <div class="res-link-name"><span>ESA · Open Science Catalog</span><span>Open ↗</span></div>
+            <div class="res-link-desc">Catalog of open Earth science datasets, products, and workflows from ESA.</div>
           </a>
           <a class="res-link-card" href="https://gportal.jaxa.jp/gpr/index/index" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>JAXA · G-Portal</span><span>Mở ↗</span></div>
-            <div class="res-link-desc">Sản phẩm quan sát Trái Đất của JAXA theo lượng mưa, tuyết phủ, thảm thực vật...</div>
+            <div class="res-link-name"><span>JAXA · G-Portal</span><span>Open ↗</span></div>
+            <div class="res-link-desc">JAXA Earth observation products covering precipitation, snow cover, vegetation, and more.</div>
           </a>
         </div>
       </div>
@@ -176,71 +270,80 @@
   </div>
 
   <div class="finder-popup" id="finder-popup" hidden>
-    <div class="finder-popup-header" title="Nhấn giữ chuột trái để di chuyển cửa sổ">
+    <div class="finder-popup-header" title="Hold left click to drag window">
       <span class="gps-popup-title"><span class="drag-grip" aria-hidden="true">⋮⋮</span>🧪 Planetary Analog Finder (KNN → TOPSIS)</span>
-      <button class="gps-close-x" id="btn-finder-close" type="button" title="Đóng">✕</button>
+      <button class="gps-close-x" id="btn-finder-close" type="button" title="Close">✕</button>
     </div>
     <div class="finder-body">
       <div class="gps-field" style="margin-bottom:0">
         <label class="gps-field-label" for="finder-target-select">
-          <span>1. Chọn Mục tiêu (Mặt Trăng / Sao Hỏa)</span>
+          <span>1. Select Target (Moon / Mars)</span>
           <span id="finder-target-badge" style="color:#38bdf8">Moon</span>
         </label>
-        <select class="gps-select" id="finder-target-select" style="margin-bottom:0"></select>
+        <div class="finder-target-row">
+          <select class="gps-select" id="finder-target-select" style="margin-bottom:0"></select>
+          <button class="finder-pick-btn" id="btn-finder-pick-globe" type="button" title="Pick a point directly on Moon or Mars">🎯 Mission Wizard</button>
+        </div>
       </div>
+
+      <div class="finder-telemetry-strip" id="finder-target-telemetry" hidden></div>
 
       <div>
         <div class="gps-field-label">
-          <span>2. Mục đích Nhiệm vụ (Mission Purpose)</span>
-          <span style="color:#94a3b8;font-size:10px">Tạm bỏ lithology_type</span>
+          <span>2. Mission Purpose</span>
+          <span style="color:#94a3b8;font-size:10px">Quantitative 5-factor model</span>
         </div>
         <div class="finder-mission-tabs" id="finder-mission-tabs"></div>
       </div>
 
-      <div class="finder-weights-strip" id="finder-weights-strip">Đang tải dữ liệu...</div>
+      <div class="finder-weights-strip" id="finder-weights-strip">Loading data...</div>
 
       <div>
-        <div class="gps-field-label">
-          <span>Top 10 Địa điểm Trái Đất phù hợp nhất</span>
-          <span id="finder-count-label" style="color:#38bdf8">0 điểm</span>
+        <div class="gps-field-label" style="align-items:center">
+          <span id="finder-results-title">Matching Earth Sites</span>
+          <div class="finder-filter-group">
+            <button class="finder-filter-chip active" id="btn-filter-suitable" type="button">Suitable ≥60%</button>
+            <button class="finder-filter-chip" id="btn-filter-all" type="button">All Ranked</button>
+            <span id="finder-count-label" style="color:#38bdf8">0 sites</span>
+          </div>
         </div>
         <div class="finder-rank-list" id="finder-rank-list"></div>
       </div>
 
       <div class="finder-detail-card" id="finder-detail-card">
-        <div style="font-size:11.5px;color:#94a3b8">Chọn một địa điểm trong Top 10 để xem 5 thanh độ giống Sᵢ, công nghệ thử nghiệm và vẽ 3D/2D.</div>
+        <div style="font-size:11.5px;color:#94a3b8">Select a matching Earth site to inspect the 5 similarity Sᵢ bars, test technologies, and 3D/2D visualization.</div>
       </div>
     </div>
     <div class="finder-footer">
-      <span id="finder-source-status">Nguồn: precomputed JSON</span>
-      <button class="finder-recalc-btn" id="btn-finder-csv" type="button" title="Tính lại KNN + TOPSIS từ Live Backend API hoặc dữ liệu CSV">↻ Tính lại từ CSV</button>
+      <span id="finder-source-status">Source: Precomputed JSON</span>
+      <button class="finder-recalc-btn" id="btn-finder-csv" type="button" title="Recompute KNN + TOPSIS from Live Backend API or CSV datasets">↻ Recompute from CSV</button>
     </div>
   </div>
 
   <div class="gps-popup" id="gps-popup" hidden>
-    <div class="gps-popup-header" title="Nhấn giữ chuột trái để di chuyển cửa sổ">
-      <span class="gps-popup-title"><span class="drag-grip" aria-hidden="true">⋮⋮</span>🔗 Liên kết 2 tọa độ GPS (Model ML)</span>
-      <button class="gps-close-x" id="btn-gps-close" type="button" title="Đóng">✕</button>
+    <div class="gps-popup-header" title="Hold left click to drag window">
+      <span class="gps-popup-title"><span class="drag-grip" aria-hidden="true">⋮⋮</span>🔗 Dual GPS Link (ML Model)</span>
+      <button class="gps-close-x" id="btn-gps-close" type="button" title="Close">✕</button>
     </div>
 
     <div class="gps-field">
       <label class="gps-field-label" for="gps-earth-input">
-        <span>1. Tọa độ Trái Đất (Lat, Lon)</span>
+        <span>1. Earth Coordinates (Lat, Lon)</span>
         <span style="color:#38bdf8">Earth</span>
       </label>
-      <input class="gps-input" id="gps-earth-input" type="text" placeholder="vd: -24.5, -69.2" value="-24.5, -69.2" />
+      <input class="gps-input" id="gps-earth-input" type="text" placeholder="e.g. -24.5, -69.2" value="-24.5, -69.2" />
     </div>
 
     <div class="gps-field">
       <label class="gps-field-label" for="gps-target-input">
-        <span>2. Tọa độ Mục tiêu (Lat, Lon)</span>
+        <span>2. Target Coordinates (Lat, Lon)</span>
         <span style="color:#fb7185">Moon / Mars</span>
       </label>
       <select class="gps-select" id="gps-target-planet">
-        <option value="mars">Sao Hỏa (Mars)</option>
-        <option value="moon">Mặt Trăng (Moon)</option>
+        <option value="mars">Mars</option>
+        <option value="moon">Moon</option>
       </select>
-      <input class="gps-input" id="gps-target-input" type="text" placeholder="vd: 18.38, 77.58" value="18.38, 77.58" />
+      <input class="gps-input" id="gps-target-input" type="text" placeholder="e.g. 18.38, 77.58" value="18.38, 77.58" />
     </div>
 
     <div class="gps-presets">
@@ -251,46 +354,46 @@
     <div class="gps-error" id="gps-error" hidden></div>
 
     <div class="gps-actions">
-      <button class="gps-submit-btn" id="btn-gps-link" type="button">🔗 Liên kết &amp; Vẽ 3D</button>
-      <button class="gps-clear-btn" id="btn-gps-clear" type="button">Xóa</button>
+      <button class="gps-submit-btn" id="btn-gps-link" type="button">🔗 Link &amp; Render 3D</button>
+      <button class="gps-clear-btn" id="btn-gps-clear" type="button">Clear</button>
     </div>
   </div>
 
   <div class="dual-link-banner" id="dual-link-banner" hidden>
-    <span id="dual-link-text">Đang liên kết 2 tọa độ GPS</span>
-    <button class="dual-exit-btn" id="btn-exit-dual" type="button">Thoát chế độ 2 hành tinh</button>
+    <span id="dual-link-text">Linking 2 GPS coordinates</span>
+    <button class="dual-exit-btn" id="btn-exit-dual" type="button">Exit Dual-Planet Mode</button>
   </div>
 
-  <!-- Khung bản đồ 2D siêu nét khi click lên quả cầu 3D -->
-  <section class="map2d-panel" id="map2d-panel" hidden aria-label="Bản đồ 2D độ phân giải cao">
-    <div class="map2d-header" title="Nhấn giữ chuột trái để di chuyển cửa sổ">
+  <!-- High-resolution 2D map panel opened on 3D globe click -->
+  <section class="map2d-panel" id="map2d-panel" hidden aria-label="High-resolution 2D map">
+    <div class="map2d-header" title="Hold left click to drag window">
       <div style="display:flex;align-items:center;min-width:0;">
         <span class="drag-grip" aria-hidden="true">⋮⋮</span>
         <div class="map2d-title-wrap">
-          <div class="map2d-title" id="map2d-title">Vị trí 2D · Trái Đất</div>
+          <div class="map2d-title" id="map2d-title">2D View · Earth</div>
           <div class="map2d-coords" id="map2d-coords">0.0000°, 0.0000°</div>
         </div>
       </div>
       <div class="map2d-hbtns">
-        <button class="map2d-icon-btn" id="btn-map2d-expand" type="button" title="Phóng to / Thu nhỏ">⤢</button>
-        <button class="map2d-icon-btn" id="btn-map2d-close" type="button" title="Đóng">✕</button>
+        <button class="map2d-icon-btn" id="btn-map2d-expand" type="button" title="Expand / Collapse">⤢</button>
+        <button class="map2d-icon-btn" id="btn-map2d-close" type="button" title="Close">✕</button>
       </div>
     </div>
     <div class="map2d-layers" id="map2d-layers"></div>
     <div id="map2d-canvas"></div>
     <div class="map2d-footer">
       <span class="map2d-source" id="map2d-source">Esri World Imagery</span>
-      <button class="map2d-send-btn" id="btn-map2d-send" type="button">➕ Gán vào GPS 1</button>
+      <button class="map2d-send-btn" id="btn-map2d-send" type="button">➕ Assign to GPS 1</button>
     </div>
   </section>
 
-  <nav class="selector-dock" aria-label="Chọn mô hình hành tinh 3D">
+  <nav class="selector-dock" aria-label="Select 3D planetary model">
     <button class="planet-card active" data-planet="earth" id="card-earth">
       <span class="key-hint">1</span>
       <span class="orb-preview orb-earth"></span>
       <span class="card-text">
-        <span class="title">Trái Đất</span>
-        <span class="sub">Earth · Analog Base</span>
+        <span class="title">Earth</span>
+        <span class="sub">Terrestrial Analog Base</span>
       </span>
     </button>
 
@@ -298,8 +401,8 @@
       <span class="key-hint">2</span>
       <span class="orb-preview orb-moon"></span>
       <span class="card-text">
-        <span class="title">Mặt Trăng</span>
-        <span class="sub">Moon · Lunar Base</span>
+        <span class="title">Moon</span>
+        <span class="sub">Lunar Base Target</span>
       </span>
     </button>
 
@@ -307,8 +410,8 @@
       <span class="key-hint">3</span>
       <span class="orb-preview orb-mars"></span>
       <span class="card-text">
-        <span class="title">Sao Hỏa</span>
-        <span class="sub">Mars · Red Planet</span>
+        <span class="title">Mars</span>
+        <span class="sub">Red Planet Target</span>
       </span>
     </button>
   </nav>

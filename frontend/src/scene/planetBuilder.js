@@ -12,7 +12,7 @@ function getTextureLoader() {
 }
 
 // ==========================================
-// 3. TIỆN ÍCH NẠP TEXTURE & TỌA ĐỘ CẦU
+// 3. TEXTURE LOADING & SPHERICAL COORDINATE UTILITIES
 // ==========================================
 export function loadSingleTexture(url, isColor) {
   return new Promise((resolve) => {
@@ -122,13 +122,13 @@ export function createAnalogMarkers(cfg) {
 }
 
 // ==========================================
-// 4. DỰNG MÔ HÌNH HÀNH TINH TỪ PLANET_CONFIG
+// 4. BUILD PLANET MODEL FROM PLANET_CONFIG
 // ==========================================
 export async function buildPlanet(key) {
   const cfg = PLANET_CONFIG[key];
   const group = new THREE.Group();
 
-  // Placeholder ban đầu (hiện ngay nếu chưa có ảnh hoặc đang mở file://)
+  // Initial wireframe placeholder (shown immediately if textures are missing or opened via file://)
   const placeholderMat = new THREE.MeshStandardMaterial({
     color: cfg.placeholderColor,
     roughness: 0.85,
@@ -143,7 +143,7 @@ export async function buildPlanet(key) {
   surfaceMesh.userData.planetKey = key;
   group.add(surfaceMesh);
 
-  // Ghim tọa độ Analog gắn chặt lên surfaceMesh để xoay theo hành tinh
+  // Attach Analog site pins directly onto surfaceMesh so they rotate with the planet
   const markersGroup = createAnalogMarkers(cfg);
   surfaceMesh.add(markersGroup);
 
@@ -153,7 +153,7 @@ export async function buildPlanet(key) {
 
   group.rotation.z = appState.isUprightAxis ? 0 : THREE.MathUtils.degToRad(cfg.tiltDeg);
 
-  // Nạp ảnh thật từ assets/textures/
+  // Load real textures from assets/textures/
   const [colorMap, cloudMap, normalMap, bumpMap, specMap] = await Promise.all([
     loadFirstAvailable(cfg.textures.color, true),
     loadFirstAvailable(cfg.textures.clouds, false),
@@ -215,7 +215,7 @@ export async function buildPlanet(key) {
   return group;
 }
 
-// Chọn ảnh trực tiếp từ máy (dùng khi mở file:// hoặc muốn đổi texture nhanh)
+// Pick local texture image directly from device (useful under file:// or quick texture swap)
 export function initLocalTexturePicker(onTextureUpdated) {
   const pickBtn = document.getElementById('btn-pick-texture');
   const fileInput = document.getElementById('local-texture-input');
@@ -268,7 +268,7 @@ export function initLocalTexturePicker(onTextureUpdated) {
   });
 }
 
-// Tooltip khi di chuột qua các ghim 3D
+// Hover tooltip for 3D pins
 export function initMarkerHoverTooltip() {
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
@@ -298,18 +298,31 @@ export function initMarkerHoverTooltip() {
       if (topAnalogs) pickTargets.push(...topAnalogs.children);
     });
 
-    if (!pickTargets.length) {
-      tooltip.style.display = 'none';
-      return;
-    }
-
     pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
     pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(pointer, camera);
 
-    const hits = raycaster.intersectObjects(pickTargets, false);
-    const hitWithSite = hits.find(h => h.object.userData && h.object.userData.site);
     const surfaceHits = raycaster.intersectObjects(surfaceTargets, false);
+    if (appState.missionWizardState && appState.missionWizardState.pickingOnGlobe) {
+      const targetHit = surfaceHits.find(h => h.object.userData.planetKey === appState.missionWizardState.planet);
+      if (targetHit) {
+        const localPt = targetHit.object.worldToLocal(targetHit.point.clone());
+        const { lat, lon } = vector3ToLatLon(localPt);
+        const bodyLabel = appState.missionWizardState.planet === 'moon' ? 'Moon' : 'Mars';
+        tooltip.style.display = 'block';
+        tooltip.style.left = (e.clientX + 14) + 'px';
+        tooltip.style.top = (e.clientY + 14) + 'px';
+        tooltip.innerHTML = `<strong>🎯 Select ${bodyLabel} Target</strong><br><span style="color:#38bdf8">${lat.toFixed(2)}°, ${lon.toFixed(2)}° (Click to match Earth)</span>`;
+        renderer.domElement.style.cursor = 'crosshair';
+      } else {
+        tooltip.style.display = 'none';
+        renderer.domElement.style.cursor = 'grab';
+      }
+      return;
+    }
+
+    const hits = pickTargets.length ? raycaster.intersectObjects(pickTargets, false) : [];
+    const hitWithSite = hits.find(h => h.object.userData && h.object.userData.site);
     const isFrontSide = !surfaceHits.length || (hitWithSite && hitWithSite.distance <= surfaceHits[0].distance + 0.12);
 
     if (hitWithSite && isFrontSide) {

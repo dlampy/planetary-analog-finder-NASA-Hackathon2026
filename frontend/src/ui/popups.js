@@ -37,7 +37,7 @@ export function toggleSettingsMenu(forceOpen) {
   settingsMenu.hidden = !nextOpen;
   btnSettingsMenu.classList.toggle('active', nextOpen);
   btnSettingsMenu.setAttribute('aria-expanded', String(nextOpen));
-  btnSettingsMenu.textContent = nextOpen ? '⚙️ Cài đặt ▴' : '⚙️ Cài đặt ▾';
+  btnSettingsMenu.textContent = nextOpen ? '⚙️ Settings ▴' : '⚙️ Settings ▾';
   if (geNavEl) {
     geNavEl.classList.toggle('is-hidden-by-settings', nextOpen);
     geNavEl.setAttribute('aria-hidden', String(nextOpen));
@@ -162,7 +162,7 @@ export function initPopups() {
     const tCoord = parseGpsInput(gpsTargetInput.value);
     if (!eCoord || !tCoord) {
       gpsError.hidden = false;
-      gpsError.textContent = 'Tọa độ chưa hợp lệ. Hãy nhập dạng "lat, lon" (Lat: -90..90, Lon: -180..180).';
+      gpsError.textContent = 'Invalid coordinates. Enter as "lat, lon" (Lat: -90..90, Lon: -180..180).';
       return;
     }
     gpsError.hidden = true;

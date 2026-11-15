@@ -67,7 +67,7 @@
   justify-content: flex-end;
 }
 
-/* Ô cài đặt tổng hợp duy nhất ở góc trên phải */
+/* Unified single settings drawer at top-right */
 .settings-drawer {
   pointer-events: auto;
   width: min(300px, calc(100vw - 24px));

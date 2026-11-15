@@ -37,8 +37,8 @@ class AnalogSearchRequest(BaseModel):
     custom_weights: Optional[Dict[str, float]] = Field(
         None, description="Optional overrides for individual factors or 4 domain sliders"
     )
-    top_n: int = Field(10, ge=1, le=50, description="Number of ranked analog matches to return")
-    knn_k: int = Field(25, ge=5, le=100, description="Stage 1 candidate filter pool size")
+    top_n: int = Field(10, ge=1, le=2000, description="Number of ranked analog matches to return")
+    knn_k: int = Field(25, ge=1, le=2000, description="Stage 1 candidate filter pool size")
 
 
 # ---------------------------------------------------------------------------

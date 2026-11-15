@@ -28,35 +28,35 @@ FEATURE_META: Dict[str, Dict[str, Any]] = {
         "weight_col": "w_slope",
         "min": 0.0,
         "max": 65.0,
-        "label": "Độ dốc (Slope)",
+        "label": "Slope",
         "unit": "°",
     },
     "mean_temp_c": {
         "weight_col": "w_temp",
         "min": -30.0,
         "max": 45.0,
-        "label": "Nhiệt độ TB",
+        "label": "Mean Temp",
         "unit": "°C",
     },
     "temp_swing_c": {
         "weight_col": "w_temp_swing",
         "min": 0.0,
         "max": 40.0,
-        "label": "Biên độ nhiệt ngày",
+        "label": "Diurnal Temp Swing",
         "unit": "°C",
     },
     "aridity_ice_idx": {
         "weight_col": "w_aridity_ice",
         "min": 0.0,
         "max": 1.0,
-        "label": "Độ khô hạn / Băng",
+        "label": "Aridity / Ice",
         "unit": "",
     },
     "has_subsurface_void": {
         "weight_col": "w_void",
         "min": 0.0,
         "max": 1.0,
-        "label": "Hang / Hốc ngầm",
+        "label": "Subsurface Void",
         "unit": "",
     },
 }
@@ -158,7 +158,7 @@ def get_top_analogs(
     earth_knn = earth_clipped * sqrt_weights
     target_knn = (target_clipped * sqrt_weights).reshape(1, -1)
 
-    n_candidates = min(knn_k, len(earth_df))
+    n_candidates = max(1, min(int(knn_k), len(earth_df)))
     nn = NearestNeighbors(n_neighbors=n_candidates, algorithm="ball_tree", metric="euclidean")
     nn.fit(earth_knn)
     _, indices = nn.kneighbors(target_knn)
@@ -200,7 +200,7 @@ def get_top_analogs(
                 }
             )
 
-    order = np.argsort(-closeness)[: min(top_n, n_candidates)]
+    order = np.argsort(-closeness)[: min(max(1, int(top_n)), n_candidates)]
     results: List[Dict[str, Any]] = []
 
     for rank_pos, local_i in enumerate(order, start=1):
@@ -247,8 +247,8 @@ def get_top_analogs(
 def _planet_physical_limits(planet: str) -> str:
     p = planet.strip().lower()
     if p == "moon":
-        return "Trọng lực Trái Đất (1g) cao gấp ~6 lần Mặt Trăng (0.165g); có khí quyển 1 atm và từ trường chắn bức xạ thay vì chân không và bụi regolith sắc nhọn."
-    return "Trọng lực Trái Đất (1g) cao gấp ~2.6 lần Sao Hỏa (0.38g); áp suất 1 atm giàu O₂/N₂ khác hẳn khí quyển 95% CO₂ loãng và bức xạ bề mặt Sao Hỏa."
+        return "Earth gravity (1g) is ~6x stronger than the Moon (0.165g), with a 1 atm atmosphere and magnetic shielding instead of vacuum and sharp regolith dust."
+    return "Earth gravity (1g) is ~2.6x stronger than Mars (0.38g), with a 1 atm O₂/N₂ atmosphere rather than Mars' tenuous 95% CO₂ air and high surface radiation."
 
 
 def _default_source_url(planet: str) -> str:
@@ -291,7 +291,7 @@ def resolve_site_test_info(
             return {
                 "is_fallback_note": True,
                 "technology_to_test": str(mission_row["technology_to_test"]),
-                "why_suitable": f"Ghi chú nền ({earth_item['micro_site_name']}): {r['why_suitable']}",
+                "why_suitable": f"Base note ({earth_item['micro_site_name']}): {r['why_suitable']}",
                 "analogy_limitations": str(r["analogy_limitations"]),
                 "source_url": str(r["source_url"]),
             }
@@ -300,36 +300,36 @@ def resolve_site_test_info(
     strongest = earth_item["strongest_factors"]
     weakest = earth_item["weakest_factor"]
 
-    top_desc = " và ".join(f"{FEATURE_META[col]['label']} ({si[col]}%)" for col in strongest)
+    top_desc = " and ".join(f"{FEATURE_META[col]['label']} ({si[col]}%)" for col in strongest)
     why_parts = [
-        f"Thuộc vùng {earth_item['parent_biome']} ({earth_item['micro_site_name']}), tương đồng nổi bật với {target_name} ở {top_desc}."
+        f"Located in {earth_item['parent_biome']} ({earth_item['micro_site_name']}), showing strong similarity to {target_name} in {top_desc}."
     ]
     lith = str(earth_item.get("dominant_lithology", "") or "").strip()
     mineral = str(earth_item.get("surface_mineral_class", "") or "").strip()
     basalt_pct = earth_item.get("basalt_fraction_pct")
     if lith and lith.lower() != "unknown":
-        mineral_txt = f"nhóm khoáng {mineral}" if mineral else "địa chất đặc trưng"
-        basalt_txt = f", tỷ lệ bazan {basalt_pct}%" if basalt_pct is not None else ""
-        why_parts.append(f"Thành phần thạch học: {lith} ({mineral_txt}{basalt_txt}).")
+        mineral_txt = f"{mineral} mineral class" if mineral else "characteristic geology"
+        basalt_txt = f", {basalt_pct}% basalt" if basalt_pct is not None else ""
+        why_parts.append(f"Lithology: {lith} ({mineral_txt}{basalt_txt}).")
     if int(earth_item.get("permafrost_presence", 0)) == 1:
-        why_parts.append("Có tầng đất đóng băng vĩnh cửu (permafrost) phục vụ thử nghiệm vùng cực/băng ngầm.")
+        why_parts.append("Contains permafrost layers suitable for polar and subsurface-ice testing.")
     if int(earth_item["features"].get("has_subsurface_void", 0)) == 1:
-        why_parts.append("Có cấu trúc hang/ống ngầm hỗ trợ thử nghiệm khảo sát và che chắn bức xạ.")
+        why_parts.append("Includes subsurface void/cave structures supporting subterranean survey and radiation-shielding trials.")
 
     weak_label = FEATURE_META[weakest]["label"]
     limit_parts = [
-        f"Yếu tố lệch nhiều nhất: {weak_label} (chỉ đạt {si[weakest]}% tương đồng).",
+        f"Weakest matching factor: {weak_label} ({si[weakest]}% similarity).",
         _planet_physical_limits(planet),
     ]
     if earth_item.get("out_of_earth_bounds"):
         oob_labels = ", ".join(
             f"{o['label']} ({o['target_value']}{o['unit']})" for o in earth_item["out_of_earth_bounds"]
         )
-        limit_parts.append(f"Cảnh báo ngoài ngưỡng Trái Đất tại {target_name}: {oob_labels}.")
+        limit_parts.append(f"Out-of-Earth-bounds warning at {target_name}: {oob_labels}.")
 
     tech = str(mission_row["technology_to_test"])
     if int(earth_item["features"].get("has_subsurface_void", 0)) == 0 and mission_id == "lava_tube_habitat":
-        tech += " (Lưu ý: điểm này không có hang ngầm tự nhiên, chỉ thử phần địa hình bề mặt/thông tin vô tuyến)."
+        tech += " (Note: this site has no natural subsurface void; testing is limited to surface terrain and RF propagation)."
 
     return {
         "is_fallback_note": True,

@@ -1,6 +1,6 @@
 @echo off
 title NASA 3D Local Server (http://localhost:8080)
-echo Dang khoi dong may chu web cuc bo cho DLT_NASAHackathon2026...
+echo Starting local web server for DLT_NASAHackathon2026...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$root = '%~dp0'.TrimEnd('\'); $sep = '#__PS_' + 'START__'; $code = ((Get-Content -Raw -LiteralPath '%~f0') -split $sep, 2)[1]; Invoke-Expression $code"
 pause
 exit /b
@@ -23,13 +23,13 @@ for ($p = 8080; $p -le 8090; $p++) {
 }
 
 if (-not $listener) {
-  Write-Host "Khong the mo cong 8080-8090." -ForegroundColor Red
+  Write-Host "Unable to bind ports 8080-8090." -ForegroundColor Red
   exit 1
 }
 
 $url = "http://localhost:$port/index.html"
-Write-Host "Server dang chay tai: $url" -ForegroundColor Green
-Write-Host "Nhan Ctrl+C hoac dong cua so nay de tat server." -ForegroundColor Yellow
+Write-Host "Server is running at: $url" -ForegroundColor Green
+Write-Host "Press Ctrl+C or close this window to stop the server." -ForegroundColor Yellow
 Start-Process $url
 
 $mimeTypes = @{

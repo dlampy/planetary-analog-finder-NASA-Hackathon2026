@@ -8,6 +8,12 @@ import { initPopups, setGpsInputs } from './ui/popups.js';
 import { clampAllFloatingWindows } from './ui/windowManager.js';
 import { initMap2DAndRaycaster } from './map2d/leafletMap.js';
 import { initFinderPanel } from './finder/finderPanel.js';
+import {
+  focusRecommendedPlace,
+  initWelcomeModal,
+  openWelcomeModal,
+  shouldAutoShowWelcome
+} from './ui/welcomeModal.js';
 
 function bootstrap() {
   const overlay = document.getElementById('status-overlay');
@@ -15,7 +21,7 @@ function bootstrap() {
 
   if (typeof THREE === 'undefined') {
     if (statusText) {
-      statusText.textContent = 'Không thể tải thư viện Three.js. Vui lòng kiểm tra kết nối Internet.';
+      statusText.textContent = 'Unable to load Three.js library. Please check your internet connection.';
     }
     return;
   }
@@ -27,24 +33,31 @@ function bootstrap() {
   initControlsAndDock();
   initPopups();
   initFinderPanel();
+  initWelcomeModal();
   initLocalTexturePicker(updateInfoPanel);
   initMarkerHoverTooltip();
   initMap2DAndRaycaster();
   initGoogleEarthNav({ applyAxisMode });
 
   // ==========================================
-  // 6. KHỞI TẠO & VÒNG LẶP RENDER
+  // 6. INITIALIZATION & RENDER LOOP
   // ==========================================
   async function init() {
     const { planetModels } = appState;
     try {
-      // Tải Trái Đất trước để hiện ngay, sau đó tải tiếp Mặt Trăng & Sao Hỏa (ảnh 8K)
+      // Load Earth first for immediate display, then preload Moon & Mars (8K textures)
       planetModels.earth = await buildPlanet('earth');
       planetModels.earth.visible = false;
       threeCtx.scene.add(planetModels.earth);
 
       selectPlanet('earth');
       if (overlay) overlay.classList.add('hidden');
+
+      const params = new URLSearchParams(window.location.search);
+      const hasUrlLink = params.has('earth') && params.has('dest');
+      if (!hasUrlLink && shouldAutoShowWelcome()) {
+        openWelcomeModal();
+      }
 
       const [moon, mars] = await Promise.all([
         buildPlanet('moon'),
@@ -60,9 +73,8 @@ function bootstrap() {
         threeCtx.scene.add(m);
       });
 
-      // Hỗ trợ truyền 2 tọa độ GPS qua URL (?earth=-24.5,-69.2&target=mars&dest=18.38,77.58)
-      const params = new URLSearchParams(window.location.search);
-      if (params.has('earth') && params.has('dest')) {
+      // Support passing dual GPS coordinates via URL (?earth=-24.5,-69.2&target=mars&dest=18.38,77.58)
+      if (hasUrlLink) {
         const e = parseGpsInput(params.get('earth'));
         const t = parseGpsInput(params.get('dest'));
         const p = params.get('target') === 'moon' ? 'moon' : 'mars';
@@ -79,12 +91,14 @@ function bootstrap() {
 
       if (appState.pendingLinkArgs) {
         applyAnalogLink(appState.pendingLinkArgs);
+      } else if (appState.pendingWelcomePlace) {
+        focusRecommendedPlace(appState.pendingWelcomePlace);
       } else {
         updateInfoPanel(appState.activePlanetKey);
       }
     } catch (err) {
       if (statusText) {
-        statusText.textContent = 'Lỗi khởi tạo mô hình 3D: ' + (err && err.message ? err.message : err);
+        statusText.textContent = '3D initialization error: ' + (err && err.message ? err.message : err);
       }
     }
   }

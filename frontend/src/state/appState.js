@@ -1,5 +1,5 @@
 // ==========================================
-// TRẠNG THÁI CHUNG TOÀN ỨNG DỤNG
+// SHARED APPLICATION STATE
 // ==========================================
 function getInitialUprightAxis() {
   try {
@@ -23,6 +23,13 @@ export const appState = {
   showMarkers: true,
   pendingLinkArgs: null,
 
+  missionWizardState: {
+    planet: 'moon',
+    missionId: 'rover_mobility',
+    pickingOnGlobe: false,
+    customTarget: null
+  },
+
   dualLinkState: {
     active: false,
     targetPlanet: 'mars',
@@ -40,6 +47,8 @@ export const appState = {
     selectedTargetId: null,
     selectedMissionId: null,
     selectedSiteId: null,
+    showAllSites: false,
+    minScoreFilter: 60,
     loading: false,
     matchReqSeq: 0
   },

@@ -7,7 +7,7 @@ import { populateGpsFrom2DMap } from '../ui/popups.js';
 import { bringWindowToFront, clampWindowToViewport, makeWindowDraggable } from '../ui/windowManager.js';
 
 // ==========================================
-// 5B. BẢN ĐỒ 2D SIÊU NÉT (TILE MAP API - LEAFLET)
+// 5B. HIGH-RES 2D MAP (TILE MAP API - LEAFLET)
 // ==========================================
 let map2dPanel = null;
 let map2dTitle = null;
@@ -20,6 +20,16 @@ let leafletMap = null;
 let leafletTileLayer = null;
 let leafletMarker = null;
 let leafletFootprintLayer = null;
+let globePickCallback = null;
+let analogPinClickCallback = null;
+
+export function registerGlobePickCallback(cb) {
+  globePickCallback = typeof cb === 'function' ? cb : null;
+}
+
+export function registerAnalogPinClickCallback(cb) {
+  analogPinClickCallback = typeof cb === 'function' ? cb : null;
+}
 
 function ensureLeafletMap() {
   if (leafletMap || typeof L === 'undefined') return;
@@ -37,7 +47,7 @@ function ensureLeafletMap() {
     const lat = THREE.MathUtils.clamp(ev.latlng.lat, -85.05, 85.05);
     appState.map2dState.lat = lat;
     appState.map2dState.lon = lon;
-    appState.map2dState.label = 'Điểm chọn trên bản đồ 2D';
+    appState.map2dState.label = 'Selected 2D map point';
     map2dCoords.textContent = `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
     if (leafletMarker) leafletMarker.setLatLng([lat, lon]);
     setPickedPin3D(appState.map2dState.planetKey, lat, lon);
@@ -60,7 +70,7 @@ function apply2DTileLayer(planetKey, layerId, shouldResetZoom = false) {
     noWrap: false
   }).addTo(leafletMap);
 
-  map2dSource.textContent = 'Nguồn Tile API: ' + chosen.attribution;
+  map2dSource.textContent = 'Tile API Source: ' + chosen.attribution;
 
   map2dLayersEl.innerHTML = layers.map(l => `
     <button class="map2d-layer-chip ${l.id === chosen.id ? 'active' : ''}" data-layer="${l.id}" type="button">${l.label}</button>
@@ -95,9 +105,9 @@ export function open2DMapAt(planetKey, lat, lon, label, footprintMode = null) {
   map2dState.label = label || '';
 
   const pName = PLANET_CONFIG[planetKey] ? PLANET_CONFIG[planetKey].title : planetKey;
-  map2dTitle.textContent = label ? `2D · ${label}` : `Vị trí 2D · ${pName}`;
+  map2dTitle.textContent = label ? `2D · ${label}` : `2D View · ${pName}`;
   map2dCoords.textContent = `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
-  btnMap2dSend.textContent = planetKey === 'earth' ? '➕ Gán vào GPS 1 (Earth)' : `➕ Gán vào GPS 2 (${planetKey === 'moon' ? 'Moon' : 'Mars'})`;
+  btnMap2dSend.textContent = planetKey === 'earth' ? '➕ Assign to GPS 1 (Earth)' : `➕ Assign to GPS 2 (${planetKey === 'moon' ? 'Moon' : 'Mars'})`;
 
   map2dPanel.hidden = false;
   bringWindowToFront(map2dPanel);
@@ -193,7 +203,7 @@ export function initMap2DAndRaycaster() {
     populateGpsFrom2DMap(appState.map2dState.planetKey, appState.map2dState.lat, appState.map2dState.lon);
   });
 
-  // Click trực tiếp lên bề mặt 3D (chỉ kích hoạt khi không phải kéo chuột xoay)
+  // Click directly on the 3D surface (only triggers when not dragging to orbit)
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const { renderer, camera } = threeCtx;
@@ -206,7 +216,7 @@ export function initMap2DAndRaycaster() {
   renderer.domElement.addEventListener('pointerup', (e) => {
     if (e.button !== 0) return;
     const moveDist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
-    if (moveDist > 5) return; // Đang kéo xoay quả cầu, bỏ qua
+    if (moveDist > 5) return; // Dragging globe, ignore click
 
     const visibleGroups = Object.values(appState.planetModels).filter(g => g && g.visible);
     if (!visibleGroups.length) return;
@@ -221,6 +231,8 @@ export function initMap2DAndRaycaster() {
         const markers = surface.getObjectByName('markers');
         if (markers) markersList.push(...markers.children);
       }
+      const topAnalogs = surface.getObjectByName('topAnalogs');
+      if (topAnalogs) markersList.push(...topAnalogs.children);
     });
 
     pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -230,14 +242,33 @@ export function initMap2DAndRaycaster() {
     const surfaceHits = raycaster.intersectObjects(surfaces, false);
     if (!surfaceHits.length) return;
 
+    if (appState.missionWizardState && appState.missionWizardState.pickingOnGlobe) {
+      const expected = appState.missionWizardState.planet;
+      const targetHit = surfaceHits.find(h => h.object.userData.planetKey === expected) || surfaceHits[0];
+      const clickedKey = targetHit.object.userData.planetKey || expected;
+      if (clickedKey !== expected) return;
+
+      const localPt = targetHit.object.worldToLocal(targetHit.point.clone());
+      const { lat, lon } = vector3ToLatLon(localPt);
+      setPickedPin3D(clickedKey, lat, lon, clickedKey === 'moon' ? 0xfacc15 : 0xfb7185);
+      if (globePickCallback) {
+        globePickCallback({ planet: clickedKey, lat, lon });
+      }
+      return;
+    }
+
     const firstSurfaceHit = surfaceHits[0];
     const clickedKey = firstSurfaceHit.object.userData.planetKey || appState.activePlanetKey;
 
-    // Ưu tiên nếu click trúng ghim Analog có sẵn
+    // Prioritize if an existing Analog pin was clicked
     const markerHits = raycaster.intersectObjects(markersList, false);
     const markerHit = markerHits.find(h => h.object.userData && h.object.userData.site && h.distance <= firstSurfaceHit.distance + 0.12);
     if (markerHit) {
       const site = markerHit.object.userData.site;
+      if (site.site_id && analogPinClickCallback) {
+        analogPinClickCallback(site);
+        return;
+      }
       open2DMapAt(clickedKey, site.lat, site.lon, site.name);
       return;
     }

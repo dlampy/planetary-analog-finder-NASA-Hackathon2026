@@ -4,13 +4,15 @@ import { renderTopAnalogPins } from '../scene/markersAndArcs.js';
 import { applyAnalogLink } from '../ui/infoPanel.js';
 import { bringWindowToFront, clampWindowToViewport, makeWindowDraggable } from '../ui/windowManager.js';
 import { toggleSettingsMenu } from '../ui/popups.js';
-import { open2DMapAt } from '../map2d/leafletMap.js';
+import { open2DMapAt, registerAnalogPinClickCallback } from '../map2d/leafletMap.js';
 import { escapeHtml } from './csvAndTopsis.js';
 import {
   computeBundleFromCSVs,
+  computePointAnalogsFromCSVs,
   fetchBackendMatch,
   fetchFromBackendBundle,
-  fetchPrecomputedAnalogsJson
+  fetchPrecomputedAnalogsJson,
+  probeLiveBackendBase
 } from './finderApi.js';
 
 // ==========================================
@@ -20,26 +22,101 @@ let btnFinderMenu = null;
 let finderPopup = null;
 let finderTargetSelect = null;
 let finderTargetBadge = null;
+let finderTargetTelemetry = null;
 let finderMissionTabs = null;
 let finderWeightsStrip = null;
+let finderResultsTitle = null;
+let btnFilterSuitable = null;
+let btnFilterAll = null;
 let finderCountLabel = null;
 let finderRankList = null;
 let finderDetailCard = null;
 let finderSourceStatus = null;
 let btnFinderCsv = null;
+let btnFinderPickGlobe = null;
+let reopenWizardCallback = null;
 
-async function refreshMatchFromBackend(targetId, missionId) {
+export function registerReopenWizardCallback(cb) {
+  reopenWizardCallback = typeof cb === 'function' ? cb : null;
+}
+
+function formatCustomTargetLabel(planet, lat, lon, explicitLabel) {
+  if (explicitLabel) return explicitLabel;
+  const bodyLabel = planet === 'mars' ? 'Mars' : 'Moon';
+  return `Picked ${bodyLabel} (${Number(lat).toFixed(2)}°, ${Number(lon).toFixed(2)}°)`;
+}
+
+function getDisplayedMatches(ranked) {
+  if (!Array.isArray(ranked) || !ranked.length) return [];
+  if (appState.finderState.showAllSites) return ranked;
+  const threshold = appState.finderState.minScoreFilter || 60;
+  const passing = ranked.filter(item => Number(item.topsis_score || 0) >= threshold);
+  return passing.length ? passing : ranked.slice(0, Math.min(5, ranked.length));
+}
+
+async function refreshMatchForTarget(targetObj, missionId) {
   const { finderState } = appState;
-  if (!finderState.apiBase || !finderState.data) return;
+  if (!targetObj || !finderState.data) return;
   const seq = ++finderState.matchReqSeq;
+
+  if (targetObj.isCustom) {
+    try {
+      let payload = null;
+      let sourceNote = '';
+      if (!finderState.apiBase) {
+        finderState.apiBase = await probeLiveBackendBase();
+      }
+      if (finderState.apiBase) {
+        payload = await fetchBackendMatch(finderState.apiBase, {
+          targetBody: targetObj.planet,
+          lat: targetObj.lat,
+          lon: targetObj.lon,
+          missionId,
+          evaluateAll: true
+        });
+        sourceNote = `Source: Live Backend Engine (${payload.meta?.earth_site_count || 51} Earth sites)`;
+      } else {
+        payload = await computePointAnalogsFromCSVs({
+          targetBody: targetObj.planet,
+          lat: targetObj.lat,
+          lon: targetObj.lon,
+          label: targetObj.target_name,
+          missionId,
+          evaluateAll: true
+        });
+        sourceNote = payload.meta?.source_mode === 'json_nearest_fallback'
+          ? `Fallback: Nearest precomputed base (${payload.meta.nearest_catalog_target})`
+          : `Source: Offline CSV Engine (${payload.meta?.earth_site_count || 51} Earth sites)`;
+      }
+
+      if (seq !== finderState.matchReqSeq || !payload || !Array.isArray(payload.results)) return;
+      if (payload.target) {
+        targetObj.features = payload.target.features || targetObj.features;
+        targetObj.resolved_profile = payload.target.resolved_profile || targetObj.resolved_profile;
+      }
+      if (!finderState.data.results[targetObj.target_id]) finderState.data.results[targetObj.target_id] = {};
+      finderState.data.results[targetObj.target_id][missionId] = payload.results;
+      finderSourceStatus.textContent = sourceNote;
+      renderFinderUI(true);
+    } catch (err) {
+      console.warn('Custom target match failed:', err);
+    }
+    return;
+  }
+
+  if (!finderState.apiBase) return;
   try {
-    const payload = await fetchBackendMatch(finderState.apiBase, targetId, missionId);
+    const payload = await fetchBackendMatch(finderState.apiBase, {
+      targetId: targetObj.target_id,
+      missionId,
+      evaluateAll: true
+    });
     if (seq !== finderState.matchReqSeq) return;
     if (payload && Array.isArray(payload.results)) {
-      if (!finderState.data.results[targetId]) finderState.data.results[targetId] = {};
-      finderState.data.results[targetId][missionId] = payload.results;
+      if (!finderState.data.results[targetObj.target_id]) finderState.data.results[targetObj.target_id] = {};
+      finderState.data.results[targetObj.target_id][missionId] = payload.results;
       const cnt = payload.meta && payload.meta.earth_site_count ? payload.meta.earth_site_count : '?';
-      finderSourceStatus.textContent = `Nguồn: Live Backend API (${cnt} điểm Earth)`;
+      finderSourceStatus.textContent = `Source: Live Backend API (${cnt} Earth sites)`;
       renderFinderUI(true);
     }
   } catch (err) {
@@ -47,47 +124,102 @@ async function refreshMatchFromBackend(targetId, missionId) {
   }
 }
 
+export async function runMissionAnalogSearch({ targetBody, lat, lon, label, missionId, targetId = null }) {
+  const { finderState } = appState;
+  finderPopup.hidden = false;
+  if (btnFinderMenu) btnFinderMenu.classList.add('active');
+  toggleSettingsMenu(false);
+  bringWindowToFront(finderPopup);
+  clampWindowToViewport(finderPopup);
+
+  finderSourceStatus.textContent = 'Running backend/engine KNN -> TOPSIS across all Earth sites...';
+  await ensureFinderDataLoaded(false, { autoRender: false });
+
+  if (!finderState.data) {
+    finderSourceStatus.textContent = 'Unable to load analog datasets.';
+    return;
+  }
+
+  if (targetId && finderState.data.targets.some(t => t.target_id === targetId)) {
+    finderState.selectedTargetId = targetId;
+    finderState.selectedMissionId = missionId || finderState.selectedMissionId;
+    finderState.selectedSiteId = null;
+    const presetTarget = finderState.data.targets.find(t => t.target_id === targetId);
+    renderFinderUI(true);
+    refreshMatchForTarget(presetTarget, finderState.selectedMissionId);
+    return;
+  }
+
+  const planet = String(targetBody || 'moon').toLowerCase() === 'mars' ? 'mars' : 'moon';
+  const customId = `custom_${planet}`;
+  const customLabel = formatCustomTargetLabel(planet, lat, lon, label);
+
+  let customTarget = finderState.data.targets.find(t => t.target_id === customId);
+  if (!customTarget) {
+    customTarget = {
+      target_id: customId,
+      planet,
+      target_name: customLabel,
+      lat: Number(lat),
+      lon: Number(lon),
+      isCustom: true,
+      features: {}
+    };
+    finderState.data.targets.unshift(customTarget);
+  } else {
+    customTarget.target_name = customLabel;
+    customTarget.lat = Number(lat);
+    customTarget.lon = Number(lon);
+    customTarget.isCustom = true;
+  }
+
+  finderState.selectedTargetId = customId;
+  finderState.selectedMissionId = missionId || finderState.selectedMissionId || (finderState.data.missions[0] && finderState.data.missions[0].mission_id);
+  finderState.selectedSiteId = null;
+  await refreshMatchForTarget(customTarget, finderState.selectedMissionId);
+}
+
 async function recomputeFinderFromCSVs() {
   const { finderState } = appState;
-  finderSourceStatus.textContent = 'Đang đọc 4 file CSV từ backend/data và tính KNN → TOPSIS...';
+  finderSourceStatus.textContent = 'Reading backend/data CSVs and computing KNN → TOPSIS...';
   btnFinderCsv.disabled = true;
   try {
     const bundle = await computeBundleFromCSVs();
     finderState.apiBase = null;
     finderState.data = bundle;
-    finderSourceStatus.textContent = `Nguồn: Live JS CSV (${bundle.meta.earth_site_count} điểm Earth)`;
+    finderSourceStatus.textContent = `Source: Live JS CSV (${bundle.meta.earth_site_count} Earth sites)`;
     renderFinderUI(true);
   } catch (err) {
     console.warn(err);
-    finderSourceStatus.textContent = 'Lỗi đọc CSV (hãy chạy backend hoặc start_local.bat)';
+    finderSourceStatus.textContent = 'CSV read error (run backend or start_local.bat)';
   } finally {
     btnFinderCsv.disabled = false;
   }
 }
 
-export async function ensureFinderDataLoaded(forceRefresh = false) {
+export async function ensureFinderDataLoaded(forceRefresh = false, { autoRender = true } = {}) {
   const { finderState } = appState;
   if ((finderState.data && !forceRefresh) || finderState.loading) return;
   finderState.loading = true;
-  finderSourceStatus.textContent = 'Đang kết nối Backend API để tính độ tương đồng...';
+  finderSourceStatus.textContent = 'Connecting to Backend API for similarity matching...';
   try {
     const backendRes = await fetchFromBackendBundle();
     if (backendRes) {
       finderState.apiBase = backendRes.base;
       finderState.data = backendRes.json;
       const cnt = backendRes.json.meta && backendRes.json.meta.earth_site_count ? backendRes.json.meta.earth_site_count : '?';
-      finderSourceStatus.textContent = `Nguồn: Live Backend API (${cnt} điểm Earth)`;
-      renderFinderUI(true);
+      finderSourceStatus.textContent = `Source: Live Backend API (${cnt} Earth sites)`;
+      if (autoRender) renderFinderUI(true);
       return;
     }
 
-    finderSourceStatus.textContent = 'Backend offline · Đang tải analogs_results.json...';
+    finderSourceStatus.textContent = 'Backend offline · Loading analogs_results.json...';
     const json = await fetchPrecomputedAnalogsJson();
     finderState.apiBase = null;
     finderState.data = json;
     const cnt = json.meta && json.meta.earth_site_count ? json.meta.earth_site_count : '?';
-    finderSourceStatus.textContent = `Nguồn: precomputed JSON (${cnt} điểm Earth)`;
-    renderFinderUI(true);
+    finderSourceStatus.textContent = `Source: Precomputed JSON (${cnt} Earth sites)`;
+    if (autoRender) renderFinderUI(true);
   } catch (err) {
     finderState.loading = false;
     await recomputeFinderFromCSVs();
@@ -124,21 +256,21 @@ export function selectAnalogRankItem(item, targetObj, missionObj, shouldDrawMap 
   }).join('');
 
   const footprintLabelMap = {
-    square_1km: 'Ô 1 km × 1 km (ISRU)',
-    circle_5km: 'Vòng tròn r = 5 km (Rover)',
-    circle_500m: 'Vòng tròn r = 500 m (Habitat)'
+    square_1km: '1 km × 1 km Grid (ISRU)',
+    circle_5km: 'Circle r = 5 km (Rover)',
+    circle_500m: 'Circle r = 500 m (Habitat)'
   };
   const fpLabel = footprintLabelMap[missionObj.footprint_mode] || missionObj.footprint_mode;
   const isFallback = Boolean(item.is_fallback_note);
   const geoParts = [];
   if (item.dominant_lithology && String(item.dominant_lithology).toLowerCase() !== 'unknown') {
-    geoParts.push(`Thạch học: ${escapeHtml(item.dominant_lithology)}`);
+    geoParts.push(`Lithology: ${escapeHtml(item.dominant_lithology)}`);
   }
   if (item.surface_mineral_class) {
-    geoParts.push(`Khoáng vật: ${escapeHtml(item.surface_mineral_class)}`);
+    geoParts.push(`Mineral: ${escapeHtml(item.surface_mineral_class)}`);
   }
   if (item.elevation_m !== undefined && item.elevation_m !== null) {
-    geoParts.push(`Cao độ: ${item.elevation_m} m`);
+    geoParts.push(`Elevation: ${item.elevation_m} m`);
   }
   const geoLineHtml = geoParts.length
     ? `<div style="font-size:10.5px;color:#94a3b8;margin-bottom:6px">${geoParts.join(' · ')}</div>`
@@ -150,30 +282,31 @@ export function selectAnalogRankItem(item, targetObj, missionObj, shouldDrawMap 
       <span class="finder-badge ${isFallback ? 'fallback' : 'manual'}">${isFallback ? 'Auto-Fallback' : 'Verified CSV'}</span>
     </div>
     <div style="font-size:11px;color:#94a3b8;margin-bottom:4px">
-      Tọa độ: ${Number(item.lat).toFixed(3)}°, ${Number(item.lon).toFixed(3)}° · Footprint: <strong style="color:#7dd3fc">${escapeHtml(fpLabel)}</strong>
+      Coords: ${Number(item.lat).toFixed(3)}°, ${Number(item.lon).toFixed(3)}° · Footprint: <strong style="color:#7dd3fc">${escapeHtml(fpLabel)}</strong>
     </div>
     ${geoLineHtml}
     ${barsHtml}
     <div style="margin-top:8px;font-size:11.5px;color:#cbd5e1;line-height:1.45">
-      <strong style="color:#38bdf8">Công nghệ thử nghiệm:</strong> ${escapeHtml(item.technology_to_test)}
+      <strong style="color:#38bdf8">Technology to Test:</strong> ${escapeHtml(item.technology_to_test)}
     </div>
     <div style="margin-top:5px;font-size:11.5px;color:#cbd5e1;line-height:1.45">
-      <strong style="color:#34d399">Lý do phù hợp:</strong> ${escapeHtml(item.why_suitable)}
+      <strong style="color:#34d399">Why Suitable:</strong> ${escapeHtml(item.why_suitable)}
     </div>
     <div class="finder-warn-box">
-      <strong>⚠ Điểm tương đồng bị phá vỡ (Where the Analogy Breaks Down):</strong>
+      <strong>⚠ Where the Analogy Breaks Down:</strong>
       ${escapeHtml(item.analogy_limitations)}
     </div>
     <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center;font-size:11px">
-      <a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;text-decoration:none">Tài liệu tham khảo ↗</a>
-      <button type="button" class="finder-recalc-btn" id="btn-finder-focus-link">🛰 Vẽ nối 3D &amp; 2D Footprint</button>
+      <a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;text-decoration:none">Reference Source ↗</a>
+      <button type="button" class="finder-recalc-btn" id="btn-finder-focus-link">🛰 Draw 3D Link &amp; 2D Footprint</button>
     </div>
   `;
 
   const btnFocus = document.getElementById('btn-finder-focus-link');
   const triggerVisualSync = () => {
-    const rankList = finderState.data.results[targetObj.target_id][missionObj.mission_id] || [];
-    renderTopAnalogPins(rankList, item.site_id);
+    const rankList = (finderState.data.results[targetObj.target_id] && finderState.data.results[targetObj.target_id][missionObj.mission_id]) || [];
+    const displayed = getDisplayedMatches(rankList);
+    renderTopAnalogPins(displayed, item.site_id);
     applyAnalogLink({
       earthLat: item.lat,
       earthLon: item.lon,
@@ -209,8 +342,21 @@ export function renderFinderUI(autoFocusTop1 = false) {
   `).join('');
 
   const targetObj = data.targets.find(t => t.target_id === finderState.selectedTargetId);
-  const tFeat = targetObj ? targetObj.features : {};
-  finderTargetBadge.textContent = targetObj ? `${targetObj.planet.toUpperCase()} · ${tFeat.slope_deg}° · void=${tFeat.has_subsurface_void}` : '';
+  const tFeat = (targetObj && targetObj.features) || {};
+  const slopeTxt = tFeat.slope_deg !== undefined ? `${tFeat.slope_deg}°` : '—';
+  const voidTxt = tFeat.has_subsurface_void !== undefined ? `void=${tFeat.has_subsurface_void}` : '';
+  finderTargetBadge.textContent = targetObj ? `${targetObj.planet.toUpperCase()} · ${slopeTxt}${voidTxt ? ' · ' + voidTxt : ''}` : '';
+
+  if (finderTargetTelemetry) {
+    const prof = targetObj && targetObj.resolved_profile;
+    if (prof) {
+      finderTargetTelemetry.hidden = false;
+      const iceNote = prof.water_ice_presence ? `Ice ${prof.surface_ice_fraction_pct || 0}%` : 'Dry surface';
+      finderTargetTelemetry.innerHTML = `<strong>Resolved ${escapeHtml(targetObj.planet.toUpperCase())} Profile:</strong> ${escapeHtml(String(prof.terrain_type || 'terrain').replace(/_/g, ' '))} · ${escapeHtml(String(prof.dominant_lithology || ''))} (${prof.basalt_fraction_pct ?? 0}% basalt) · Elev ${prof.elevation_m ?? 0} m · Mean ${tFeat.mean_temp_c ?? '—'}°C · ${iceNote}`;
+    } else {
+      finderTargetTelemetry.hidden = true;
+    }
+  }
 
   finderMissionTabs.innerHTML = data.missions.map(m => `
     <button type="button" class="finder-mission-tab ${m.mission_id === finderState.selectedMissionId ? 'active' : ''}" data-mission="${escapeHtml(m.mission_id)}">
@@ -223,23 +369,33 @@ export function renderFinderUI(autoFocusTop1 = false) {
       finderState.selectedMissionId = btn.dataset.mission;
       finderState.selectedSiteId = null;
       renderFinderUI(true);
-      if (finderState.apiBase) {
-        refreshMatchFromBackend(finderState.selectedTargetId, finderState.selectedMissionId);
-      }
+      refreshMatchForTarget(targetObj, finderState.selectedMissionId);
     });
   });
 
   const missionObj = data.missions.find(m => m.mission_id === finderState.selectedMissionId);
   const w = (missionObj && missionObj.weights) || {};
-  finderWeightsStrip.textContent = `Trọng số: Slope ${(w.slope_deg * 100 || 0).toFixed(0)}% · Temp ${(w.mean_temp_c * 100 || 0).toFixed(0)}% · Swing ${(w.temp_swing_c * 100 || 0).toFixed(0)}% · Ice/Aridity ${(w.aridity_ice_idx * 100 || 0).toFixed(0)}% · Void ${(w.has_subsurface_void * 100 || 0).toFixed(0)}%`;
+  finderWeightsStrip.textContent = `Weights: Slope ${(w.slope_deg * 100 || 0).toFixed(0)}% · Temp ${(w.mean_temp_c * 100 || 0).toFixed(0)}% · Swing ${(w.temp_swing_c * 100 || 0).toFixed(0)}% · Ice/Aridity ${(w.aridity_ice_idx * 100 || 0).toFixed(0)}% · Void ${(w.has_subsurface_void * 100 || 0).toFixed(0)}%`;
+
+  if (btnFilterSuitable) btnFilterSuitable.classList.toggle('active', !finderState.showAllSites);
+  if (btnFilterAll) btnFilterAll.classList.toggle('active', finderState.showAllSites);
 
   const ranked = (data.results && data.results[targetObj.target_id] && data.results[targetObj.target_id][missionObj.mission_id]) || [];
-  finderCountLabel.textContent = `${ranked.length} điểm`;
+  const displayed = getDisplayedMatches(ranked);
+  const threshold = finderState.minScoreFilter || 60;
+  const passingCount = ranked.filter(r => Number(r.topsis_score || 0) >= threshold).length;
 
-  finderRankList.innerHTML = ranked.map(item => `
+  if (finderResultsTitle) {
+    finderResultsTitle.textContent = finderState.showAllSites
+      ? `All Ranked Earth Sites (${ranked.length})`
+      : (passingCount ? `Suitable Earth Sites (≥${threshold}%)` : `Top 5 Closest Earth Sites`);
+  }
+  finderCountLabel.textContent = `${displayed.length}/${ranked.length}`;
+
+  finderRankList.innerHTML = displayed.map(item => `
     <div class="finder-rank-item ${item.site_id === finderState.selectedSiteId ? 'active' : ''}" data-site-id="${escapeHtml(item.site_id)}">
       <div class="finder-rank-num">#${item.rank}</div>
-      <div>
+      <div style="flex:1;min-width:0">
         <div class="finder-rank-name">${escapeHtml(item.micro_site_name)}</div>
         <div class="finder-rank-biome">
           ${escapeHtml(item.parent_biome)}
@@ -252,19 +408,21 @@ export function renderFinderUI(autoFocusTop1 = false) {
 
   finderRankList.querySelectorAll('.finder-rank-item').forEach(el => {
     el.addEventListener('click', () => {
-      const item = ranked.find(r => r.site_id === el.dataset.siteId);
+      const item = displayed.find(r => r.site_id === el.dataset.siteId);
       selectAnalogRankItem(item, targetObj, missionObj, true);
     });
   });
 
-  if (ranked.length) {
-    const picked = ranked.find(r => r.site_id === finderState.selectedSiteId) || ranked[0];
-    renderTopAnalogPins(ranked, picked.site_id);
+  if (displayed.length) {
+    const picked = displayed.find(r => r.site_id === finderState.selectedSiteId) || displayed[0];
+    renderTopAnalogPins(displayed, picked.site_id);
     selectAnalogRankItem(picked, targetObj, missionObj, autoFocusTop1);
+  } else {
+    finderDetailCard.innerHTML = '<div style="font-size:11.5px;color:#94a3b8">No Earth analog matches loaded yet.</div>';
   }
 }
 
-export function toggleFinderPopup(forceOpen) {
+export function toggleFinderPopup(forceOpen, { skipLoad = false } = {}) {
   if (!finderPopup) return;
   const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : finderPopup.hidden;
   finderPopup.hidden = !nextOpen;
@@ -273,7 +431,7 @@ export function toggleFinderPopup(forceOpen) {
     toggleSettingsMenu(false);
     bringWindowToFront(finderPopup);
     clampWindowToViewport(finderPopup);
-    ensureFinderDataLoaded();
+    if (!skipLoad) ensureFinderDataLoaded();
   }
 }
 
@@ -282,13 +440,18 @@ export function initFinderPanel() {
   finderPopup = document.getElementById('finder-popup');
   finderTargetSelect = document.getElementById('finder-target-select');
   finderTargetBadge = document.getElementById('finder-target-badge');
+  finderTargetTelemetry = document.getElementById('finder-target-telemetry');
   finderMissionTabs = document.getElementById('finder-mission-tabs');
   finderWeightsStrip = document.getElementById('finder-weights-strip');
+  finderResultsTitle = document.getElementById('finder-results-title');
+  btnFilterSuitable = document.getElementById('btn-filter-suitable');
+  btnFilterAll = document.getElementById('btn-filter-all');
   finderCountLabel = document.getElementById('finder-count-label');
   finderRankList = document.getElementById('finder-rank-list');
   finderDetailCard = document.getElementById('finder-detail-card');
   finderSourceStatus = document.getElementById('finder-source-status');
   btnFinderCsv = document.getElementById('btn-finder-csv');
+  btnFinderPickGlobe = document.getElementById('btn-finder-pick-globe');
 
   makeWindowDraggable(finderPopup, finderPopup.querySelector('.finder-popup-header'));
 
@@ -296,9 +459,42 @@ export function initFinderPanel() {
     const { finderState } = appState;
     finderState.selectedTargetId = finderTargetSelect.value;
     finderState.selectedSiteId = null;
+    const targetObj = finderState.data && finderState.data.targets.find(t => t.target_id === finderState.selectedTargetId);
     renderFinderUI(true);
-    if (finderState.apiBase) {
-      refreshMatchFromBackend(finderState.selectedTargetId, finderState.selectedMissionId);
+    refreshMatchForTarget(targetObj, finderState.selectedMissionId);
+  });
+
+  if (btnFilterSuitable) {
+    btnFilterSuitable.addEventListener('click', () => {
+      appState.finderState.showAllSites = false;
+      renderFinderUI(false);
+    });
+  }
+  if (btnFilterAll) {
+    btnFilterAll.addEventListener('click', () => {
+      appState.finderState.showAllSites = true;
+      renderFinderUI(false);
+    });
+  }
+  if (btnFinderPickGlobe) {
+    btnFinderPickGlobe.addEventListener('click', () => {
+      if (reopenWizardCallback) reopenWizardCallback();
+    });
+  }
+
+  registerAnalogPinClickCallback(site => {
+    const { finderState } = appState;
+    const data = finderState.data;
+    if (!data) return;
+    const targetObj = data.targets.find(t => t.target_id === finderState.selectedTargetId);
+    const missionObj = data.missions.find(m => m.mission_id === finderState.selectedMissionId);
+    const ranked = (targetObj && missionObj && data.results[targetObj.target_id]?.[missionObj.mission_id]) || [];
+    const item = ranked.find(r => r.site_id === site.site_id);
+    if (item && targetObj && missionObj) {
+      toggleFinderPopup(true, { skipLoad: true });
+      selectAnalogRankItem(item, targetObj, missionObj, true);
+    } else {
+      open2DMapAt('earth', site.lat, site.lon, site.name);
     }
   });
 
@@ -310,7 +506,7 @@ export function initFinderPanel() {
         appState.finderState.apiBase = backendRes.base;
         appState.finderState.data = backendRes.json;
         const cnt = backendRes.json.meta && backendRes.json.meta.earth_site_count ? backendRes.json.meta.earth_site_count : '?';
-        finderSourceStatus.textContent = `Nguồn: Live Backend API (${cnt} điểm Earth)`;
+        finderSourceStatus.textContent = `Source: Live Backend API (${cnt} Earth sites)`;
         renderFinderUI(true);
         return;
       }

@@ -32,7 +32,7 @@ body {
   z-index: 1;
 }
 
-/* Left Column: Brand + Info Panel (không bao giờ đè nhau) */
+/* Left Column: Brand + Info Panel (never overlapping) */
 .left-column {
   position: fixed;
   top: 18px;

@@ -119,19 +119,30 @@ export function renderTopAnalogPins(rankedList, selectedSiteId) {
 
   const group = new THREE.Group();
   group.name = 'topAnalogs';
+  const lowDotGeo = new THREE.SphereGeometry(0.022, 12, 12);
   const dotGeo = new THREE.SphereGeometry(0.028, 14, 14);
   const topDotGeo = new THREE.SphereGeometry(0.038, 16, 16);
 
   rankedList.forEach(item => {
     const isSelected = item.site_id === selectedSiteId;
     const isTop3 = item.rank <= 3;
-    const color = isSelected ? 0x38bdf8 : (isTop3 ? 0xfbbf24 : 0x22d3ee);
+    const score = Number(item.topsis_score || 0);
+    let color = 0x94a3b8;
+    if (isSelected) color = 0x38bdf8;
+    else if (isTop3) color = 0xfbbf24;
+    else if (score >= 70) color = 0x34d399;
+    else if (score >= 55) color = 0x22d3ee;
+
+    const geo = (isSelected || isTop3) ? topDotGeo : (score >= 55 ? dotGeo : lowDotGeo);
     const mat = new THREE.MeshBasicMaterial({ color });
-    const mesh = new THREE.Mesh(isSelected || isTop3 ? topDotGeo : dotGeo, mat);
-    mesh.position.copy(latLonToVector3(item.lat, item.lon, RADIUS + (isSelected ? 0.032 : 0.02)));
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(latLonToVector3(item.lat, item.lon, RADIUS + (isSelected ? 0.034 : 0.02)));
     mesh.userData.site = {
+      site_id: item.site_id,
+      lat: item.lat,
+      lon: item.lon,
       name: `#${item.rank} ${item.micro_site_name}`,
-      note: `TOPSIS ${item.topsis_score.toFixed(1)}% · ${item.parent_biome}`
+      note: `TOPSIS ${score.toFixed(1)}% · ${item.parent_biome}`
     };
     group.add(mesh);
   });
@@ -182,7 +193,7 @@ export function updateLinkArcGeometry() {
   posAttr.needsUpdate = true;
 }
 
-export function setPickedPin3D(planetKey, lat, lon) {
+export function setPickedPin3D(planetKey, lat, lon, colorHex = 0x22d3ee) {
   Object.values(appState.planetModels).forEach(group => {
     const surface = group && group.getObjectByName('surface');
     const old = surface && surface.getObjectByName('pickedPin');
@@ -198,14 +209,14 @@ export function setPickedPin3D(planetKey, lat, lon) {
   const pos = latLonToVector3(lat, lon, RADIUS + 0.018);
 
   const dot = new THREE.Mesh(
-    new THREE.SphereGeometry(0.038, 16, 16),
-    new THREE.MeshBasicMaterial({ color: 0x22d3ee })
+    new THREE.SphereGeometry(0.04, 16, 16),
+    new THREE.MeshBasicMaterial({ color: colorHex })
   );
   dot.position.copy(pos);
 
   const ring = new THREE.Mesh(
-    new THREE.RingGeometry(0.055, 0.085, 24),
-    new THREE.MeshBasicMaterial({ color: 0x22d3ee, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
+    new THREE.RingGeometry(0.06, 0.095, 24),
+    new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.92 })
   );
   ring.position.copy(pos);
   ring.lookAt(pos.clone().multiplyScalar(2));

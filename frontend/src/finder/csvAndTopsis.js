@@ -265,7 +265,7 @@ export function resolveSiteTestFallbackJS(earthItem, targetObj, missionObj, test
     return {
       is_fallback_note: true,
       technology_to_test: missionObj.technology_to_test,
-      why_suitable: `Ghi chú nền (${earthItem.micro_site_name}): ${siteOnly.why_suitable}`,
+      why_suitable: `Base note (${earthItem.micro_site_name}): ${siteOnly.why_suitable}`,
       analogy_limitations: siteOnly.analogy_limitations,
       source_url: siteOnly.source_url
     };
@@ -277,43 +277,43 @@ export function resolveSiteTestFallbackJS(earthItem, targetObj, missionObj, test
       const meta = FINDER_FEATURES.find(f => f.col === col);
       return `${meta ? meta.label : col} (${si[col]}%)`;
     })
-    .join(' và ');
+    .join(' and ');
   const whyParts = [
-    `Thuộc vùng ${earthItem.parent_biome} (${earthItem.micro_site_name}), tương đồng nổi bật với ${targetObj.target_name} ở ${topDesc}.`
+    `Located in ${earthItem.parent_biome} (${earthItem.micro_site_name}), showing strong similarity to ${targetObj.target_name} in ${topDesc}.`
   ];
   const lith = String(earthItem.dominant_lithology || '').trim();
   const mineral = String(earthItem.surface_mineral_class || '').trim();
   if (lith && lith.toLowerCase() !== 'unknown') {
-    const mineralTxt = mineral ? `nhóm khoáng ${mineral}` : 'địa chất đặc trưng';
-    const basaltTxt = earthItem.basalt_fraction_pct !== undefined ? `, tỷ lệ bazan ${earthItem.basalt_fraction_pct}%` : '';
-    whyParts.push(`Thành phần thạch học: ${lith} (${mineralTxt}${basaltTxt}).`);
+    const mineralTxt = mineral ? `${mineral} mineral class` : 'characteristic geology';
+    const basaltTxt = earthItem.basalt_fraction_pct !== undefined ? `, ${earthItem.basalt_fraction_pct}% basalt` : '';
+    whyParts.push(`Lithology: ${lith} (${mineralTxt}${basaltTxt}).`);
   }
   if ((earthItem.permafrost_presence || 0) === 1) {
-    whyParts.push('Có tầng đất đóng băng vĩnh cửu (permafrost) phục vụ thử nghiệm vùng cực/băng ngầm.');
+    whyParts.push('Contains permafrost layers suitable for polar and subsurface-ice testing.');
   }
   if ((earthItem.features.has_subsurface_void || 0) === 1) {
-    whyParts.push('Có cấu trúc hang/ống ngầm hỗ trợ thử nghiệm khảo sát và che chắn bức xạ.');
+    whyParts.push('Includes subsurface void/cave structures supporting subterranean survey and radiation-shielding trials.');
   }
 
   const weakMeta = FINDER_FEATURES.find(f => f.col === earthItem.weakest_factor) || FINDER_FEATURES[0];
   const planetLimits = targetObj.planet === 'moon'
-    ? 'Trọng lực Trái Đất (1g) cao gấp ~6 lần Mặt Trăng (0.165g); có khí quyển 1 atm và từ trường chắn bức xạ thay vì chân không và bụi regolith sắc nhọn.'
-    : 'Trọng lực Trái Đất (1g) cao gấp ~2.6 lần Sao Hỏa (0.38g); áp suất 1 atm giàu O₂/N₂ khác hẳn khí quyển 95% CO₂ loãng và bức xạ bề mặt Sao Hỏa.';
+    ? 'Earth gravity (1g) is ~6x stronger than the Moon (0.165g), with a 1 atm atmosphere and magnetic shielding instead of vacuum and sharp regolith dust.'
+    : "Earth gravity (1g) is ~2.6x stronger than Mars (0.38g), with a 1 atm O₂/N₂ atmosphere rather than Mars' tenuous 95% CO₂ air and high surface radiation.";
 
   const limitParts = [
-    `Yếu tố lệch nhiều nhất: ${weakMeta.label} (chỉ đạt ${si[earthItem.weakest_factor]}% tương đồng).`,
+    `Weakest matching factor: ${weakMeta.label} (${si[earthItem.weakest_factor]}% similarity).`,
     planetLimits
   ];
   if (earthItem.out_of_earth_bounds && earthItem.out_of_earth_bounds.length) {
     const oobStr = earthItem.out_of_earth_bounds
       .map(o => `${o.label} (${o.target_value}${o.unit})`)
       .join(', ');
-    limitParts.push(`Cảnh báo ngoài ngưỡng Trái Đất tại ${targetObj.target_name}: ${oobStr}.`);
+    limitParts.push(`Out-of-Earth-bounds warning at ${targetObj.target_name}: ${oobStr}.`);
   }
 
   let tech = missionObj.technology_to_test;
   if ((earthItem.features.has_subsurface_void || 0) === 0 && missionObj.mission_id === 'lava_tube_habitat') {
-    tech += ' (Lưu ý: điểm này không có hang ngầm tự nhiên, chỉ thử phần địa hình bề mặt/thông tin vô tuyến).';
+    tech += ' (Note: this site has no natural subsurface void; testing is limited to surface terrain and RF propagation).';
   }
 
   return {
@@ -327,7 +327,148 @@ export function resolveSiteTestFallbackJS(earthItem, targetObj, missionObj, test
   };
 }
 
-export function runKnnTopsisJS(targetObj, missionObj, earthSites, testExactMap, testSiteMap) {
+const LUNAR_PITS_JS = [
+  [14.08, -56.77],
+  [8.33, 33.22],
+  [-35.95, 166.06]
+];
+
+const MARTIAN_CAVES_JS = [
+  [-9.0, -121.0],
+  [0.8, -113.0]
+];
+
+export function resolvePlanetaryPointJS(body, lat, lon) {
+  const cleanBody = String(body || 'moon').trim().toLowerCase() === 'mars' ? 'mars' : 'moon';
+  const absLat = Math.abs(lat);
+  const cosLat = Math.max(0, Math.cos((lat * Math.PI) / 180));
+
+  if (cleanBody === 'moon') {
+    const isPolarPsr = absLat >= 82.0;
+    const isNearsideMare = (-20.0 <= lat && lat <= 55.0) && (-65.0 <= lon && lon <= 60.0);
+    let elevationM = 1200.0;
+    let slopeDeg = 5.8;
+    let terrainType = 'crater_rim';
+    let lithology = 'anorthosite';
+    let basaltPct = 10.0;
+    let meanT = 0.0;
+    let minT = 0.0;
+    let maxT = 0.0;
+    let waterIce = 0;
+    let icePct = 0.0;
+
+    if (isPolarPsr) {
+      elevationM = 1800.0;
+      slopeDeg = 7.2;
+      terrainType = 'crater_rim';
+      lithology = 'anorthosite';
+      basaltPct = 5.0;
+      meanT = -205.0;
+      minT = -240.0;
+      maxT = -150.0;
+      waterIce = 1;
+      icePct = 12.0;
+    } else if (isNearsideMare) {
+      elevationM = -1800.0;
+      slopeDeg = 2.4;
+      terrainType = 'volcanic_plain';
+      lithology = 'basalt';
+      basaltPct = 86.0;
+      maxT = -140.0 + 261.0 * Math.pow(cosLat, 0.25);
+      minT = -195.0 + 22.0 * cosLat;
+      meanT = 0.45 * maxT + 0.55 * minT;
+    } else {
+      maxT = -140.0 + 261.0 * Math.pow(cosLat, 0.25);
+      minT = -195.0 + 22.0 * cosLat;
+      meanT = 0.45 * maxT + 0.55 * minT;
+    }
+
+    const hasVoid = LUNAR_PITS_JS.some(([plat, plon]) => Math.hypot(lat - plat, lon - plon) <= 2.0) ? 1 : 0;
+    const tempSwing = +(Math.max(0, maxT - minT)).toFixed(2);
+    return {
+      planet: 'moon',
+      lat,
+      lon,
+      features: {
+        slope_deg: slopeDeg,
+        mean_temp_c: +meanT.toFixed(2),
+        temp_swing_c: tempSwing,
+        aridity_ice_idx: waterIce ? 0.99 : 0.95,
+        has_subsurface_void: hasVoid
+      },
+      resolved_profile: {
+        terrain_type: terrainType,
+        dominant_lithology: lithology,
+        basalt_fraction_pct: basaltPct,
+        elevation_m: elevationM,
+        water_ice_presence: waterIce,
+        surface_ice_fraction_pct: icePct
+      }
+    };
+  }
+
+  const isPolarCap = absLat >= 75.0;
+  const isTharsis = (-20.0 <= lat && lat <= 30.0) && (-145.0 <= lon && lon <= -90.0);
+  const isLowlands = (lat > 25.0) && !isTharsis;
+
+  let elevationM = 2000.0;
+  let slopeDeg = 4.8;
+  let terrainType = 'crater_rim';
+  let lithology = 'impact_breccia';
+  let basaltPct = 58.0;
+
+  if (isPolarCap) {
+    elevationM = lat > 0 ? -3200.0 : 2800.0;
+    slopeDeg = 2.8;
+    terrainType = 'polar_ice_cap';
+    lithology = 'evaporite';
+    basaltPct = 25.0;
+  } else if (isTharsis) {
+    elevationM = 8500.0;
+    slopeDeg = 7.5;
+    terrainType = 'volcanic_plain';
+    lithology = 'basalt';
+    basaltPct = 90.0;
+  } else if (isLowlands) {
+    elevationM = -3800.0;
+    slopeDeg = 1.9;
+    terrainType = 'aeolian_desert';
+    lithology = 'aeolian_dune';
+    basaltPct = 62.0;
+  }
+
+  const meanT = -115.0 + 62.0 * cosLat;
+  const swingHalf = 36.0 * cosLat + 10.0;
+  const tempSwing = +(2 * swingHalf).toFixed(2);
+  const waterIce = absLat >= 45.0 ? 1 : 0;
+  const icePct = waterIce ? +Math.min(95.0, (absLat - 40.0) * 2.0).toFixed(1) : 0.0;
+  const hasVoid = MARTIAN_CAVES_JS.some(([plat, plon]) => Math.hypot(lat - plat, lon - plon) <= 2.5) ? 1 : 0;
+
+  return {
+    planet: 'mars',
+    lat,
+    lon,
+    features: {
+      slope_deg: slopeDeg,
+      mean_temp_c: +meanT.toFixed(2),
+      temp_swing_c: tempSwing,
+      aridity_ice_idx: waterIce ? 0.99 : 0.95,
+      has_subsurface_void: hasVoid
+    },
+    resolved_profile: {
+      terrain_type: terrainType,
+      dominant_lithology: lithology,
+      basalt_fraction_pct: basaltPct,
+      elevation_m: elevationM,
+      water_ice_presence: waterIce,
+      surface_ice_fraction_pct: icePct
+    }
+  };
+}
+
+export function runKnnTopsisJS(targetObj, missionObj, earthSites, testExactMap, testSiteMap, options = {}) {
+  const knnK = options.evaluateAll ? earthSites.length : Math.max(1, options.knnK || 25);
+  const topN = options.evaluateAll ? earthSites.length : Math.max(1, options.topN || 10);
   const weights = computeWeightsJS(missionObj);
   const spans = {};
   FINDER_FEATURES.forEach(f => { spans[f.col] = f.bounds[1] - f.bounds[0]; });
@@ -367,7 +508,7 @@ export function runKnnTopsisJS(targetObj, missionObj, earthSites, testExactMap, 
   });
 
   withKnn.sort((a, b) => a.knnDist - b.knnDist || a.site.site_id.localeCompare(b.site.site_id));
-  const candidates = withKnn.slice(0, Math.min(25, withKnn.length));
+  const candidates = withKnn.slice(0, Math.min(knnK, withKnn.length));
   if (!candidates.length) return [];
 
   // Stage 2: Vector-normalized Analog TOPSIS on candidate deviations from unclipped target
@@ -456,5 +597,5 @@ export function runKnnTopsisJS(targetObj, missionObj, earthSites, testExactMap, 
   });
 
   scored.sort((a, b) => b.topsis_score - a.topsis_score || a.site_id.localeCompare(b.site_id));
-  return scored.slice(0, 10).map((item, idx) => ({ rank: idx + 1, ...item }));
+  return scored.slice(0, Math.min(topN, scored.length)).map((item, idx) => ({ rank: idx + 1, ...item }));
 }
