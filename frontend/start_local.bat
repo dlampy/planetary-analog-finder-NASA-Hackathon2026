@@ -38,6 +38,7 @@ $mimeTypes = @{
   ".js"   = "application/javascript; charset=utf-8"
   ".css"  = "text/css; charset=utf-8"
   ".json" = "application/json; charset=utf-8"
+  ".csv"  = "text/csv; charset=utf-8"
   ".jpg"  = "image/jpeg"
   ".jpeg" = "image/jpeg"
   ".png"  = "image/png"
@@ -45,15 +46,25 @@ $mimeTypes = @{
   ".txt"  = "text/plain; charset=utf-8"
 }
 
+$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $root ".."))
+$backendDataRoot = [System.IO.Path]::GetFullPath((Join-Path $repoRoot "backend\data"))
+
 try {
   while ($listener.IsListening) {
     $ctx = $listener.GetContext()
     $reqPath = $ctx.Request.Url.LocalPath.TrimStart('/')
     if ([string]::IsNullOrWhiteSpace($reqPath)) { $reqPath = "index.html" }
     $relPath = $reqPath.Replace('/', '\')
-    $fullPath = [System.IO.Path]::GetFullPath((Join-Path $root $relPath))
 
-    if (-not $fullPath.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase) -or -not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+    if ($relPath.StartsWith("backend\data\", [System.StringComparison]::OrdinalIgnoreCase)) {
+      $fullPath = [System.IO.Path]::GetFullPath((Join-Path $repoRoot $relPath))
+      $allowed = $fullPath.StartsWith($backendDataRoot, [System.StringComparison]::OrdinalIgnoreCase)
+    } else {
+      $fullPath = [System.IO.Path]::GetFullPath((Join-Path $root $relPath))
+      $allowed = $fullPath.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase)
+    }
+
+    if (-not $allowed -or -not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
       $ctx.Response.StatusCode = 404
       $bytes = [System.Text.Encoding]::UTF8.GetBytes("404 Not Found")
       $ctx.Response.OutputStream.Write($bytes, 0, $bytes.Length)

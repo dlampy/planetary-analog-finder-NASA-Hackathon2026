@@ -1,6 +1,6 @@
-"""backend/api/schemas.py
-
-Pydantic validation models for the Planetary Analog Finder REST API.
+"""
+backend/api/schemas.py
+Pydantic validation schemas for the Planetary Analog Finder REST API.
 """
 
 from __future__ import annotations
@@ -28,22 +28,21 @@ class AnalogSearchRequest(BaseModel):
         None, description="Preset target site ID (e.g., 'MOON_001', 'MARS_001')"
     )
     custom_coordinates: Optional[Coordinates] = Field(
-        None, description="Custom coordinates clicked on the planetary map"
+        None, description="Custom coordinates clicked on the Moon or Mars map"
     )
     mission_id: str = Field(
-        "rover_mobility",
-        description="Preset mission ID (e.g., 'rover_mobility', 'isru_extraction')",
+        "isru_extraction",
+        description="Mission preset ID ('rover_mobility', 'isru_extraction', 'subsurface_habitat')",
     )
     custom_weights: Optional[Dict[str, float]] = Field(
-        None,
-        description="Optional overrides for individual factors or domain sliders",
+        None, description="Optional overrides for individual factors or 4 domain sliders"
     )
-    top_n: int = Field(10, ge=1, le=50, description="Number of analog matches to return")
-    knn_k: int = Field(25, ge=5, le=100, description="Stage 1 candidate pool size")
+    top_n: int = Field(10, ge=1, le=50, description="Number of ranked analog matches to return")
+    knn_k: int = Field(25, ge=5, le=100, description="Stage 1 candidate filter pool size")
 
 
 # ---------------------------------------------------------------------------
-# 2. DIAGNOSTIC & BREAKDOWN SCHEMAS
+# 2. TESTBED PROTOCOL & DIAGNOSTIC SCHEMAS
 # ---------------------------------------------------------------------------
 class FactorMetric(BaseModel):
     feature: str
@@ -59,6 +58,38 @@ class OutOfBoundsAlert(BaseModel):
     unit: str
 
 
+class MacroFieldSiteProtocol(BaseModel):
+    analog_site: str
+    field_objective: str
+    topographic_challenge: str
+
+
+class RegolithSimulantProtocol(BaseModel):
+    simulant_name: str
+    producer: str
+    mineralogy: str
+    testing_utility: str
+    ice_amendment: str
+
+
+class BreakdownDiagnostic(BaseModel):
+    dimension: str
+    planetary_baseline: str
+    earth_baseline: str
+    impact_warning: str
+    engineering_mitigation: str
+
+
+class EarthTestbedProtocol(BaseModel):
+    target_body: str
+    target_coordinates: Dict[str, Optional[float]]
+    macro_field_site: MacroFieldSiteProtocol
+    micro_regolith_simulant: RegolithSimulantProtocol
+    where_analogy_breaks_down: List[BreakdownDiagnostic]
+    primary_mismatch: str
+    mitigation_summary: str
+
+
 class AnalogSiteResult(BaseModel):
     rank: int
     site_id: str
@@ -68,13 +99,14 @@ class AnalogSiteResult(BaseModel):
     lon: float
     knn_distance: float
     topsis_score: float
-    domain_scores: Dict[str, float]  # Topography, Geology, Thermal, Cryosphere
-    features: Dict[str, float]       # Continuous & binary raw metrics
-    categorical_features: Dict[str, str]  # Rock, mineral, and dust classes
-    similarity_Si: Dict[str, float]  # 0-100% per-factor closeness scores
-    weakest_factor: FactorMetric     # "Where the analogy breaks down"
+    domain_scores: Dict[str, float]
+    features: Dict[str, float]
+    categorical_features: Dict[str, str]
+    similarity_Si: Dict[str, float]
+    weakest_factor: FactorMetric
     strongest_factors: List[FactorMetric]
     out_of_earth_bounds: List[OutOfBoundsAlert]
+    testbed_protocol: Optional[EarthTestbedProtocol] = None
 
 
 # ---------------------------------------------------------------------------
@@ -87,22 +119,13 @@ class MissionPresetResponse(BaseModel):
     weights: Dict[str, float]
 
 
-class TargetSiteResponse(BaseModel):
-    site_id: str
-    body: str
-    target_name: str
-    parent_region: Optional[str] = None
-    lat: float
-    lon: float
-    features: Dict[str, Any]
-
-
 class TargetProfileSummary(BaseModel):
     body: str
     site_name: str
     lat: float
     lon: float
-    features: Dict[str, Any]
+    shared_17: Dict[str, Any]
+    exclusive: Dict[str, Any]
 
 
 class AnalogSearchResponse(BaseModel):
@@ -111,3 +134,4 @@ class AnalogSearchResponse(BaseModel):
     active_weights: Dict[str, float]
     total_candidates_evaluated: int
     top_matches: List[AnalogSiteResult]
+    primary_testbed_protocol: EarthTestbedProtocol

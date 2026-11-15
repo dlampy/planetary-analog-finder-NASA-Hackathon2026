@@ -1,0 +1,264 @@
+:root {
+  --bg-space: #030712;
+  --panel-bg: rgba(10, 15, 30, 0.8);
+  --panel-border: rgba(148, 163, 184, 0.22);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent-earth: #38bdf8;
+  --accent-moon: #e2e8f0;
+  --accent-mars: #fb7185;
+  --active-accent: #38bdf8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  background: radial-gradient(circle at 50% 45%, #0b132b 0%, #030712 75%);
+  color: var(--text-main);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+}
+
+#canvas-container {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Left Column: Brand + Info Panel (không bao giờ đè nhau) */
+.left-column {
+  position: fixed;
+  top: 18px;
+  left: 22px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 330px;
+  max-height: calc(100vh - 125px);
+  pointer-events: none;
+}
+
+.brand {
+  pointer-events: auto;
+  background: var(--panel-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 13px 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  flex-shrink: 0;
+}
+
+.brand-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #38bdf8;
+  margin-bottom: 4px;
+}
+
+.brand h1 {
+  font-size: 16.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.brand p {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+
+/* 3 Planet Selector Boxes */
+.selector-dock {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(175px, 220px));
+  gap: 12px;
+  padding: 10px;
+  background: rgba(8, 13, 26, 0.7);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--panel-border);
+  border-radius: 22px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+.planet-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 13px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  color: var(--text-main);
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.planet-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-3px);
+}
+
+.planet-card.active[data-planet="earth"] {
+  border-color: var(--accent-earth);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(15, 23, 42, 0.78));
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.28);
+}
+
+.planet-card.active[data-planet="moon"] {
+  border-color: var(--accent-moon);
+  background: linear-gradient(135deg, rgba(226, 232, 240, 0.2), rgba(15, 23, 42, 0.78));
+  box-shadow: 0 0 24px rgba(226, 232, 240, 0.22);
+}
+
+.planet-card.active[data-planet="mars"] {
+  border-color: var(--accent-mars);
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.25), rgba(15, 23, 42, 0.78));
+  box-shadow: 0 0 24px rgba(249, 115, 22, 0.3);
+}
+
+.orb-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: inset -8px -8px 14px rgba(0, 0, 0, 0.65);
+}
+
+.orb-earth {
+  background: radial-gradient(circle at 30% 30%, #60a5fa, #1d4ed8 55%, #065f46 75%, #0f172a);
+  box-shadow: inset -8px -8px 14px rgba(0, 0, 0, 0.65), 0 0 12px rgba(56, 189, 248, 0.45);
+}
+
+.orb-moon {
+  background: radial-gradient(circle at 32% 30%, #f1f5f9, #94a3b8 55%, #475569 90%);
+  box-shadow: inset -8px -8px 14px rgba(0, 0, 0, 0.7), 0 0 10px rgba(226, 232, 240, 0.3);
+}
+
+.orb-mars {
+  background: radial-gradient(circle at 30% 30%, #fdba74, #ea580c 52%, #7c2d12 90%);
+  box-shadow: inset -8px -8px 14px rgba(0, 0, 0, 0.65), 0 0 12px rgba(249, 115, 22, 0.45);
+}
+
+.card-text .title {
+  font-size: 15px;
+  font-weight: 700;
+  display: block;
+}
+
+.card-text .sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.key-hint {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+/* Tooltip on 3D Marker Hover */
+#marker-tooltip {
+  position: fixed;
+  z-index: 80;
+  pointer-events: none;
+  background: rgba(8, 13, 26, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 12px;
+  color: #f8fafc;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+  display: none;
+  max-width: 220px;
+}
+
+/* Loading / Status Overlay */
+#status-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #030712;
+  color: #e2e8f0;
+  gap: 12px;
+  transition: opacity 0.35s ease;
+}
+
+#status-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(56, 189, 248, 0.2);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
+@media (max-width: 860px) {
+.left-column {
+  top: 10px;
+  left: 10px;
+  width: auto;
+  right: 10px;
+}
+.selector-dock {
+  width: calc(100vw - 20px);
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 8px;
+  bottom: 12px;
+}
+.planet-card {
+  flex-direction: column;
+  text-align: center;
+  padding: 10px 6px;
+  gap: 7px;
+}
+.key-hint {
+  display: none;
+}
+}

@@ -1,0 +1,222 @@
+/* Banner trạng thái Dual Link */
+.dual-link-banner {
+  position: fixed;
+  bottom: 106px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  background: rgba(9, 14, 28, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 99px;
+  padding: 7px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #e2e8f0;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
+}
+
+.dual-link-banner[hidden] {
+  display: none;
+}
+
+.dual-exit-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 99px;
+  cursor: pointer;
+}
+
+.dual-exit-btn:hover {
+  background: rgba(244, 63, 94, 0.35);
+}
+
+/* Info Panel */
+.info-panel {
+  pointer-events: auto;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--panel-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  padding: 15px 17px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.info-panel::-webkit-scrollbar {
+  width: 5px;
+}
+.info-panel::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 99px;
+}
+
+.info-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--active-accent);
+  margin-bottom: 5px;
+}
+
+.info-panel h2 {
+  font-size: 21px;
+  font-weight: 700;
+  margin-bottom: 7px;
+}
+
+.info-desc {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #cbd5e1;
+  margin-bottom: 12px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 11px;
+}
+
+.stat-item {
+  background: rgba(255, 255, 255, 0.035);
+  padding: 7px 9px;
+  border-radius: 10px;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  display: block;
+}
+
+.stat-value {
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-top: 2px;
+  display: block;
+}
+
+/* Analog Sites List */
+.analogs-section {
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 10px;
+}
+
+.analogs-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 7px;
+}
+
+.analog-item {
+  width: 100%;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 7px 9px;
+  margin-bottom: 6px;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.analog-item:hover,
+.analog-item.selected {
+  background: rgba(56, 189, 248, 0.14);
+  border-color: var(--active-accent);
+}
+
+.analog-name {
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.analog-coords {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--active-accent);
+}
+
+.analog-note {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.texture-status {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  line-height: 1.45;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.65);
+  color: #cbd5e1;
+}
+
+.texture-status.real {
+  border-color: rgba(52, 211, 153, 0.4);
+  background: rgba(16, 185, 129, 0.12);
+  color: #a7f3d0;
+}
+
+.texture-status.fallback {
+  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(245, 158, 11, 0.1);
+  color: #fde68a;
+}
+
+.local-upload-btn {
+  margin-top: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px dashed rgba(56, 189, 248, 0.5);
+  background: rgba(56, 189, 248, 0.1);
+  color: #e0f2fe;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.local-upload-btn:hover {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
+}
+
+
+@media (max-width: 860px) {
+.info-panel {
+  display: none;
+}
+.dual-link-banner {
+  display: none;
+}
+}

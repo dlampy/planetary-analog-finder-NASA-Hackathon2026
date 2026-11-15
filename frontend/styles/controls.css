@@ -1,0 +1,305 @@
+/* Right Column: Controls Bar + GPS Menu + Pop-up */
+.right-column {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.controls-bar {
+  pointer-events: auto;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.ctrl-btn {
+  background: var(--panel-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--panel-border);
+  color: var(--text-main);
+  padding: 9px 13px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ctrl-btn:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.ctrl-btn.active {
+  border-color: var(--active-accent);
+  background: rgba(56, 189, 248, 0.16);
+}
+
+.gps-menu-btn {
+  pointer-events: auto;
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(14, 24, 48, 0.88);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.gps-menu-btn.active {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.24);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+}
+
+.right-sub-actions {
+  pointer-events: auto;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+
+/* Google Earth-style Navigation Widget (Compass N + D-Pad + Zoom Slider) */
+.ge-nav {
+  position: fixed;
+  top: 114px;
+  right: 22px;
+  z-index: 16;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.ge-compass-wrap {
+  position: relative;
+  width: 62px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ge-compass-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 58%, rgba(15, 23, 42, 0.85) 60%, rgba(148, 163, 184, 0.25) 100%);
+  border: 1.5px solid rgba(148, 163, 184, 0.45);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55), inset 0 0 8px rgba(56, 189, 248, 0.16);
+  cursor: grab;
+  touch-action: none;
+}
+
+.ge-compass-ring:active {
+  cursor: grabbing;
+  border-color: #38bdf8;
+}
+
+.ge-compass-ring::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  pointer-events: none;
+}
+
+.ge-north-btn {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(56, 189, 248, 0.8);
+  background: linear-gradient(180deg, #f8fafc, #cbd5e1);
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  z-index: 2;
+}
+
+.ge-north-btn:hover {
+  background: #38bdf8;
+  color: #fff;
+}
+
+.ge-orb-pad {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(226, 232, 240, 0.26), rgba(15, 23, 42, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55), inset 0 1px 2px rgba(255, 255, 255, 0.2);
+  z-index: 1;
+}
+
+.ge-dpad {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(226, 232, 240, 0.28), rgba(15, 23, 42, 0.92));
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.58), inset 0 1px 2px rgba(255, 255, 255, 0.25);
+}
+
+.ge-dir-btn {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: none;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 8.5px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 4px;
+}
+
+.ge-dir-btn:hover,
+.ge-dir-btn:active {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.16);
+}
+
+.ge-dir-btn.up { top: 2px; left: 50%; transform: translateX(-50%); }
+.ge-dir-btn.down { bottom: 2px; left: 50%; transform: translateX(-50%); }
+.ge-dir-btn.left { left: 2px; top: 50%; transform: translateY(-50%); }
+.ge-dir-btn.right { right: 2px; top: 50%; transform: translateY(-50%); }
+
+.ge-center-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(226, 232, 240, 0.22);
+  cursor: pointer;
+  padding: 0;
+}
+
+.ge-center-dot:hover {
+  background: rgba(56, 189, 248, 0.75);
+  border-color: #fff;
+}
+
+.ge-look-eye {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.85);
+  pointer-events: none;
+}
+
+.ge-zoom-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(9, 14, 28, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 99px;
+  padding: 5px 5px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+}
+
+.ge-zoom-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(241, 245, 249, 0.14);
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.ge-zoom-btn:hover {
+  background: rgba(56, 189, 248, 0.35);
+  border-color: #38bdf8;
+}
+
+.ge-zoom-track {
+  position: relative;
+  width: 16px;
+  height: 108px;
+  cursor: pointer;
+  touch-action: none;
+  display: flex;
+  justify-content: center;
+}
+
+.ge-zoom-track::before {
+  content: "";
+  width: 4px;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.55), rgba(148, 163, 184, 0.35));
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.ge-zoom-thumb {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 8px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #f8fafc, #94a3b8);
+  border: 1px solid #38bdf8;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.65);
+  pointer-events: none;
+}
+
+@media (max-width: 860px) {
+.ge-nav {
+  display: none;
+}
+.right-column {
+  top: auto;
+  bottom: 102px;
+  right: 10px;
+}
+}

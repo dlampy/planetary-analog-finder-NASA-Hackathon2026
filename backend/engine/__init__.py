@@ -1,12 +1,8 @@
-<<<<<<< Updated upstream
-from .matcher import FEATURE_META, compute_mission_weights, get_top_analogs
-
-__all__ = ["FEATURE_META", "compute_mission_weights", "get_top_analogs"]
-=======
 """Planetary Analog Finder - Core Mathematical & Machine Learning Engine.
 
 Exposes preprocessing transformations, candidate retrieval (KNN BallTree),
-and multi-criteria closeness ranking (TOPSIS) across 17 planetary factors.
+and multi-criteria closeness ranking (TOPSIS) across 17 planetary factors,
+as well as the 5-factor placeholder matcher (`get_top_analogs`).
 """
 
 from __future__ import annotations
@@ -28,10 +24,14 @@ __all__: List[str] = [
     "filter_candidates_knn",
     # Stage 2: MCDA ranking & diagnostics
     "rank_candidates_topsis",
-    # Resolvers (Target & Candidate coordinate ingestion)
+    # Legacy / placeholder 5-factor matcher
+    "get_top_analogs",
+    # Resolvers & testbed protocol
+    "resolve_planetary_point",
     "resolve_planetary_coordinate",
     "resolve_earth_coordinate",
     "build_earth_catalog",
+    "EarthTestbedProtocolEngine",
 ]
 
 
@@ -39,6 +39,12 @@ def __getattr__(name: str) -> Any:
     """Dynamically imports and resolves engine symbols upon first access,
     preventing circular import loops and heavy startup memory overhead.
     """
+    # 0. Placeholder 5-factor matcher
+    if name == "get_top_analogs":
+        from .matcher import get_top_analogs
+
+        return get_top_analogs
+
     # 1. Preprocessing, Metadata, and Domain Groupings
     if name in (
         "FEATURE_META",
@@ -67,15 +73,16 @@ def __getattr__(name: str) -> Any:
         return rank_candidates_topsis
 
     # 4. Planetary Target Ingestion & Coordinate Snapping
-    if name == "resolve_planetary_coordinate":
-        try:
-            from .planetary_resolver import resolve_planetary_coordinate
+    if name in ("resolve_planetary_point", "resolve_planetary_coordinate"):
+        from .resolvers.planetary_resolver import resolve_planetary_point
 
-            return resolve_planetary_coordinate
-        except ImportError:
-            raise AttributeError(
-                f"module {__name__!r} has no attribute 'resolve_planetary_coordinate' (planetary_resolver.py not found)"
-            )
+        return resolve_planetary_point
+
+    # 5. Testbed Protocol Generator
+    if name == "EarthTestbedProtocolEngine":
+        from .testbed_protocol import EarthTestbedProtocolEngine
+
+        return EarthTestbedProtocolEngine
 
     # 5. Terrestrial Catalog & Coordinate Ingestion
     if name in ("resolve_earth_coordinate", "build_earth_catalog"):
@@ -94,4 +101,3 @@ def __getattr__(name: str) -> Any:
 def __dir__() -> List[str]:
     """Ensures IDE auto-completion and REPL inspection discover all exported symbols."""
     return sorted(list(globals().keys()) + __all__)
->>>>>>> Stashed changes
