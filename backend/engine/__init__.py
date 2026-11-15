@@ -35,8 +35,6 @@ __all__: List[str] = [
     # Resolvers & testbed protocol
     "resolve_planetary_point",
     "resolve_planetary_coordinate",
-    "resolve_earth_coordinate",
-    "build_earth_catalog",
     "EarthTestbedProtocolEngine",
 ]
 
@@ -86,7 +84,7 @@ def __getattr__(name: str) -> Any:
 
     # 4. Planetary Target Ingestion & Coordinate Snapping
     if name in ("resolve_planetary_point", "resolve_planetary_coordinate"):
-        from .resolvers.planetary_resolver import resolve_planetary_point
+        from .planetary_resolver import resolve_planetary_point
 
         return resolve_planetary_point
 
@@ -95,17 +93,6 @@ def __getattr__(name: str) -> Any:
         from .testbed_protocol import EarthTestbedProtocolEngine
 
         return EarthTestbedProtocolEngine
-
-    # 5. Terrestrial Catalog & Coordinate Ingestion
-    if name in ("resolve_earth_coordinate", "build_earth_catalog"):
-        try:
-            from . import earth_resolver
-
-            return getattr(earth_resolver, name)
-        except ImportError:
-            raise AttributeError(
-                f"module {__name__!r} has no attribute {name!r} (earth_resolver.py not found)"
-            )
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 

@@ -274,12 +274,14 @@ function buildCalibratedRelief(planet, lat, lon, bounds, gridSize, textureCanvas
   const resolved = planet === 'earth' ? null : resolvePlanetaryPointJS(planet, lat, lon);
   const prof = (hintProfile && hintProfile.features) || {};
   const shared = (resolved && resolved.shared_17) || {};
+  const resProf = (resolved && resolved.resolved_profile) || {};
+  const resFeat = (resolved && resolved.features) || {};
 
-  const baseElev = Number(shared.elevation_m ?? prof.elevation_m ?? (planet === 'earth' ? 450 : 0));
-  const targetSlope = Number(shared.mean_slope_deg ?? prof.slope_deg ?? 6.5);
-  const roughness = Number(shared.terrain_roughness_m ?? 0.55);
-  const terrainType = String(shared.terrain_type || (planet === 'earth' ? 'ridge_valley' : 'crater_rim'));
-  const hasVoid = Number(shared.has_subsurface_void ?? prof.has_subsurface_void ?? 0);
+  const baseElev = Number(shared.elevation_m ?? resProf.elevation_m ?? prof.elevation_m ?? (planet === 'earth' ? 450 : 0));
+  const targetSlope = Number(shared.mean_slope_deg ?? resFeat.slope_deg ?? prof.slope_deg ?? 6.5);
+  const roughness = Number(shared.terrain_roughness_m ?? (hintProfile && hintProfile.terrain_roughness_m) ?? 0.55);
+  const terrainType = String(shared.terrain_type || resProf.terrain_type || (planet === 'earth' ? 'ridge_valley' : 'crater_rim'));
+  const hasVoid = Number(shared.has_subsurface_void ?? resFeat.has_subsurface_void ?? prof.has_subsurface_void ?? 0);
 
   let texLum = null;
   if (textureCanvas) {

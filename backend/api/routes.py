@@ -33,7 +33,7 @@ from engine.matcher import (
     match_placeholder_target,
 )
 from engine.preprocessor import OFFICIAL_EARTH_CSV
-from engine.resolvers.planetary_resolver import resolve_planetary_point
+from engine.planetary_resolver import resolve_planetary_point
 from engine.terrain_fetcher import extract_terrain_patch, is_allowed_tile_url
 from engine.testbed_protocol import EarthTestbedProtocolEngine
 from .schemas import (

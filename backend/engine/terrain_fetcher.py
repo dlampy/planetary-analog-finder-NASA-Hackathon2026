@@ -19,7 +19,7 @@ from urllib.parse import urlparse
 import numpy as np
 import requests
 
-from .resolvers.planetary_resolver import resolve_planetary_point
+from .planetary_resolver import resolve_planetary_point
 
 BODY_RADII_KM = {
     "earth": 6371.0088,
