@@ -65,7 +65,39 @@ body {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #38bdf8;
+}
+
+.brand-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 4px;
+}
+
+.left-collapse-btn {
+  pointer-events: auto;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
+}
+
+.left-collapse-btn:hover {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: rgba(56, 189, 248, 0.65);
+  color: #fff;
+}
+
+.left-column.collapsed .brand,
+.left-column.collapsed .info-panel {
+  display: none;
 }
 
 .brand h1 {

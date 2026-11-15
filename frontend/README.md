@@ -19,17 +19,17 @@ Sau khi bật GitHub Pages cho repository này, bạn có thể xem trực tiế
 - **Liên kết 2 tọa độ GPS (Model ML) & Cửa sổ kéo thả**: Pop-up nhận cặp tọa độ Trái Đất ↔ Mặt Trăng / Sao Hỏa để vẽ đường cung nối 3D giữa 2 hành tinh; các cửa sổ (`Map 2D`, `Liên kết 2 tọa độ GPS`, `Nguồn dữ liệu NASA`, `Planetary Analog Finder`) đều giữ chuột trái vào thanh tiêu đề để kéo di chuyển.
 - **Planetary Analog Finder (`🧪 Analog Finder (ML)`)**: Xếp hạng Top 10 địa điểm Trái Đất tương đồng nhất theo từng mục tiêu (Mặt Trăng / Sao Hỏa) và mục đích nhiệm vụ (`Rover Mobility`, `Ground ISRU`, `Lava Tube Habitat`) bằng pipeline 2 tầng **Weighted BallTree KNN → Analog TOPSIS** trên 5 biến định lượng *(tạm bỏ `lithology_type` cho đến khi thống nhất bảng phân loại)*, kèm 5 thanh độ giống $S_i$, hộp cảnh báo **Where the Analogy Breaks Down**, sinh nội dung dự phòng tự động cho các cặp chưa có trong `data/site_tests.csv`, ghim Top-10 trên Trái Đất 3D và vẽ footprint vận hành (`1 km × 1 km`, `r = 5 km`, `r = 500 m`) trên Leaflet 2D.
 
-## Kiến trúc Dữ liệu & Thuật toán (`data/`, `engine/`, `app.py`)
-- **`data/earth_sites_1000.csv`**: Bảng địa điểm tương đồng Trái Đất (mở rộng dần tới ~1.000 điểm với 5 biến số: `slope_deg`, `mean_temp_c`, `temp_swing_c`, `aridity_ice_idx`, `has_subsurface_void`).
-- **`data/planetary_bases.csv`**: 8 mục tiêu căn cứ Mặt Trăng (Shackleton, Malapert, Marius Hills, Aristarchus, Mare Tranquillitatis) và Sao Hỏa (Jezero, Arcadia Planitia, Arsia Mons).
-- **`data/missions.csv`**: Trọng số theo mục đích nhiệm vụ và chế độ footprint (`circle_5km`, `square_1km`, `circle_500m`).
-- **`data/site_tests.csv`**: Giải thích khoa học thủ công *(nếu thiếu cặp `(site_id, mission_id)`, cả `app.py` và `index.html` đều tự sinh fallback cảnh báo dựa trên $S_i$ thấp nhất)*.
-- **`engine/matcher.py` & `app.py`**: Engine Python (`scikit-learn` `BallTree` + TOPSIS) để tiền tính `assets/data/analogs_results.json` hoặc chạy server `--serve`:
+## Kiến trúc Dữ liệu & Thuật toán (`../backend/` & `app.py`)
+- **`../backend/data/merged_earth_features_clean.csv`** *(và `placeholderData/earth_sites_1000.csv`)*: Bảng địa điểm tương đồng Trái Đất với các biến môi trường: `slope_deg`, `mean_temp_c`, `temp_swing_c`, `aridity_ice_idx`, `has_subsurface_void`...
+- **`../backend/data/placeholderData/planetary_bases.csv`**: 8 mục tiêu căn cứ Mặt Trăng (Shackleton, Malapert, Marius Hills, Aristarchus, Mare Tranquillitatis) và Sao Hỏa (Jezero, Arcadia Planitia, Arsia Mons).
+- **`../backend/data/placeholderData/missions.csv`**: Trọng số theo mục đích nhiệm vụ và chế độ footprint (`circle_5km`, `square_1km`, `circle_500m`).
+- **`../backend/data/placeholderData/site_tests.csv`**: Giải thích khoa học thủ công *(nếu thiếu cặp `(site_id, mission_id)`, cả backend và frontend đều tự sinh fallback cảnh báo dựa trên $S_i$ thấp nhất)*.
+- **`../backend/engine/` & `app.py`**: Engine Python (`scikit-learn` `BallTree` + TOPSIS) để tiền tính `assets/data/analogs_results.json` hoặc chạy FastAPI backend:
   ```bash
-  pip install -r requirements.txt
+  pip install -r ../backend/requirements.txt
   python app.py --export-json
   ```
-  *(Khi mở web qua `start_local.bat`, bạn cũng có thể bấm **`↻ Tính lại từ CSV`** ngay trong popup `🧪 Analog Finder (ML)` để tính lại trực tiếp bằng JS từ 4 file CSV mà không cần cài Python).*
+  *(Hoặc chạy FastAPI từ thư mục gốc repo: `python -m uvicorn backend.main:app --reload --port 8000` — khi mở web qua `start_local.bat`, bạn cũng có thể bấm **`↻ Tính lại từ CSV`** ngay trong popup `🧪 Analog Finder (ML)` để gọi Live Backend API hoặc tự tính bằng JS).*
 
 ## Nguồn dữ liệu mở chính thức (NASA & Cơ quan Đối tác)
 Danh sách các bộ dữ liệu được cung cấp trong thử thách và tích hợp tra cứu ngay trên nút **`📚 Nguồn dữ liệu NASA`** của website:

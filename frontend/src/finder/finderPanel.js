@@ -3,6 +3,7 @@ import { appState } from '../state/appState.js';
 import { renderTopAnalogPins } from '../scene/markersAndArcs.js';
 import { applyAnalogLink } from '../ui/infoPanel.js';
 import { bringWindowToFront, clampWindowToViewport, makeWindowDraggable } from '../ui/windowManager.js';
+import { toggleSettingsMenu } from '../ui/popups.js';
 import { open2DMapAt } from '../map2d/leafletMap.js';
 import { escapeHtml } from './csvAndTopsis.js';
 import {
@@ -269,6 +270,7 @@ export function toggleFinderPopup(forceOpen) {
   finderPopup.hidden = !nextOpen;
   if (btnFinderMenu) btnFinderMenu.classList.toggle('active', nextOpen);
   if (nextOpen) {
+    toggleSettingsMenu(false);
     bringWindowToFront(finderPopup);
     clampWindowToViewport(finderPopup);
     ensureFinderDataLoaded();

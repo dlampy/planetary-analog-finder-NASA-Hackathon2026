@@ -74,7 +74,7 @@ try {
 
     $ext = [System.IO.Path]::GetExtension($fullPath).ToLowerInvariant()
     $ctx.Response.ContentType = if ($mimeTypes.ContainsKey($ext)) { $mimeTypes[$ext] } else { "application/octet-stream" }
-    if ($ext -eq ".html" -or $ext -eq ".htm") {
+    if ($ext -in @(".html", ".htm", ".json", ".csv")) {
       $ctx.Response.AddHeader("Cache-Control", "no-store, no-cache, must-revalidate")
     }
     $bytes = [System.IO.File]::ReadAllBytes($fullPath)

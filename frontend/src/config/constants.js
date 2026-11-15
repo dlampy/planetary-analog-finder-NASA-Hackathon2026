@@ -15,7 +15,7 @@ export const PLANET_CONFIG = {
     materialType: 'phong',
     shininess: 20,
     specular: 0x334155,
-    atmosphere: { radius: 1.66, color: 0x38bdf8, intensity: 1.1 },
+    atmosphere: null,
     desc: 'Nguồn dữ liệu tham chiếu giúp tìm kiếm các địa điểm tương đồng (terrestrial analogs) cho căn cứ Mặt Trăng và Sao Hỏa.',
     stats: [
       { label: 'Bán kính', value: '6.371 km' },
