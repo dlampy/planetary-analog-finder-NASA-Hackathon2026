@@ -32,13 +32,14 @@ export function exitDualLinkMode(nextPlanetKey) {
   }
 }
 
-export function applyAnalogLink({ earthLat, earthLon, targetPlanet, targetLat, targetLon }) {
+export function applyAnalogLink({ earthLat, earthLon, targetPlanet, targetLat, targetLon, pairSource = 'dual' }) {
   if (!PLANET_CONFIG[targetPlanet] || targetPlanet === 'earth') targetPlanet = 'mars';
   if (!appState.planetModels.earth || !appState.planetModels[targetPlanet]) {
-    appState.pendingLinkArgs = { earthLat, earthLon, targetPlanet, targetLat, targetLon };
+    appState.pendingLinkArgs = { earthLat, earthLon, targetPlanet, targetLat, targetLon, pairSource };
     return;
   }
   appState.pendingLinkArgs = null;
+  appState.lastTerrainPairSource = pairSource;
   clearCustomPins();
 
   const { dualLinkState, planetModels } = appState;

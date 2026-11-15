@@ -8,6 +8,7 @@ import { initPopups, setGpsInputs } from './ui/popups.js';
 import { clampAllFloatingWindows } from './ui/windowManager.js';
 import { initMap2DAndRaycaster } from './map2d/leafletMap.js';
 import { initFinderPanel } from './finder/finderPanel.js';
+import { initTerrainComparatorPanel } from './terrain/terrainComparatorPanel.js';
 import {
   initWelcomeModal,
   openWelcomeModal
@@ -31,6 +32,7 @@ function bootstrap() {
   initControlsAndDock();
   initPopups();
   initFinderPanel();
+  initTerrainComparatorPanel();
   initWelcomeModal();
   initLocalTexturePicker(updateInfoPanel);
   initMarkerHoverTooltip();

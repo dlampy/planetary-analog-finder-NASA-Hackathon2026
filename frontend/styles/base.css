@@ -46,6 +46,19 @@ body {
   pointer-events: none;
 }
 
+.top-left-launcher {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.top-left-terrain-btn {
+  width: fit-content;
+  white-space: nowrap;
+}
+
 .brand {
   pointer-events: auto;
   background: var(--panel-bg);

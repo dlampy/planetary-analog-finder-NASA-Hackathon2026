@@ -7,8 +7,9 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, Response, status
 import pandas as pd
+import requests
 from pydantic import BaseModel, Field
 
 from engine import (
@@ -33,6 +34,7 @@ from engine.matcher import (
 )
 from engine.preprocessor import OFFICIAL_EARTH_CSV
 from engine.resolvers.planetary_resolver import resolve_planetary_point
+from engine.terrain_fetcher import extract_terrain_patch, is_allowed_tile_url
 from engine.testbed_protocol import EarthTestbedProtocolEngine
 from .schemas import (
     AnalogSearchRequest,
@@ -507,3 +509,47 @@ def search_analogs(payload: AnalogSearchRequest) -> AnalogSearchResponse:
         top_matches=ranked_analogs,
         primary_testbed_protocol=EarthTestbedProtocol(**primary_protocol_data),
     )
+
+
+# ---------------------------------------------------------------------------
+# 4. 3D TERRAIN DEM PATCH & TILE PROXY ENDPOINTS
+# ---------------------------------------------------------------------------
+@router.get("/terrain/patch")
+def get_terrain_patch(
+    planet: str = Query("earth", description="earth, moon, or mars"),
+    lat: float = Query(..., ge=-90.0, le=90.0),
+    lon: float = Query(..., ge=-180.0, le=180.0),
+    radius_km: float = Query(10.0, ge=1.0, le=80.0),
+    grid_size: int = Query(72, ge=24, le=128),
+) -> Dict[str, Any]:
+    """Return gridded elevation data (DEM) for 3D terrain block comparison."""
+    try:
+        return extract_terrain_patch(
+            planet=planet,
+            lat=lat,
+            lon=lon,
+            radius_km=radius_km,
+            grid_size=grid_size,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.get("/terrain/proxy-tile")
+def proxy_terrain_tile(url: str = Query(..., description="Allowlisted HTTPS tile URL")):
+    """Relay planetary/earth surface tiles with browser-friendly CORS headers."""
+    if not is_allowed_tile_url(url):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="URL host is not in the planetary tile allowlist",
+        )
+    try:
+        upstream = requests.get(url, timeout=6.0)
+        if upstream.status_code != 200:
+            raise HTTPException(status_code=upstream.status_code, detail="Upstream tile unavailable")
+        media_type = upstream.headers.get("Content-Type", "image/png")
+        return Response(content=upstream.content, media_type=media_type)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc

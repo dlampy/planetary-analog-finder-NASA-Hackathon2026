@@ -58,8 +58,11 @@ export const appState = {
     layerId: 'esri',
     lat: 0,
     lon: 0,
-    label: ''
+    label: '',
+    footprintMode: null
   },
+
+  lastTerrainPairSource: 'finder',
 
   topWindowZ: 22,
   floatingWindows: []

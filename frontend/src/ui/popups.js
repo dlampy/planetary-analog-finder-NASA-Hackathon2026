@@ -1,5 +1,7 @@
+import { appState } from '../state/appState.js';
 import { clearCustomPins, parseGpsInput } from '../scene/markersAndArcs.js';
 import { applyAnalogLink, exitDualLinkMode } from './infoPanel.js';
+import { openTerrainComparison } from '../terrain/terrainComparatorPanel.js';
 import { bringWindowToFront, clampWindowToViewport, makeWindowDraggable } from './windowManager.js';
 
 let rightToolsWrap = null;
@@ -157,24 +159,71 @@ export function initPopups() {
     });
   });
 
-  document.getElementById('btn-gps-link').addEventListener('click', () => {
+  const readValidatedGpsPair = () => {
     const eCoord = parseGpsInput(gpsEarthInput.value);
     const tCoord = parseGpsInput(gpsTargetInput.value);
     if (!eCoord || !tCoord) {
       gpsError.hidden = false;
       gpsError.textContent = 'Invalid coordinates. Enter as "lat, lon" (Lat: -90..90, Lon: -180..180).';
-      return;
+      return null;
     }
     gpsError.hidden = true;
+    const planet = gpsTargetPlanet.value === 'moon' ? 'moon' : 'mars';
+    return { eCoord, tCoord, planet };
+  };
+
+  document.getElementById('btn-gps-link').addEventListener('click', () => {
+    const pair = readValidatedGpsPair();
+    if (!pair) return;
     applyAnalogLink({
-      earthLat: eCoord.lat,
-      earthLon: eCoord.lon,
-      targetPlanet: gpsTargetPlanet.value,
-      targetLat: tCoord.lat,
-      targetLon: tCoord.lon
+      earthLat: pair.eCoord.lat,
+      earthLon: pair.eCoord.lon,
+      targetPlanet: pair.planet,
+      targetLat: pair.tCoord.lat,
+      targetLon: pair.tCoord.lon,
+      pairSource: 'dual'
     });
     toggleGpsPopup(false);
   });
+
+  const btnGpsTerrain = document.getElementById('btn-gps-terrain');
+  if (btnGpsTerrain) {
+    btnGpsTerrain.addEventListener('click', () => {
+      const pair = readValidatedGpsPair();
+      if (!pair) return;
+      const planetLabel = pair.planet === 'moon' ? 'Moon' : 'Mars';
+      applyAnalogLink({
+        earthLat: pair.eCoord.lat,
+        earthLon: pair.eCoord.lon,
+        targetPlanet: pair.planet,
+        targetLat: pair.tCoord.lat,
+        targetLon: pair.tCoord.lon,
+        pairSource: 'dual'
+      });
+      toggleGpsPopup(false);
+      openTerrainComparison({
+        viewMode: 'compare',
+        earthSite: { name: 'GPS 1 (Earth)', lat: pair.eCoord.lat, lon: pair.eCoord.lon },
+        targetSite: { name: `GPS 2 (${planetLabel})`, planet: pair.planet, lat: pair.tCoord.lat, lon: pair.tCoord.lon },
+        radiusKm: 10
+      });
+    });
+  }
+
+  const btnDualTerrain = document.getElementById('btn-dual-terrain');
+  if (btnDualTerrain) {
+    btnDualTerrain.addEventListener('click', () => {
+      const { dualLinkState } = appState;
+      const planet = dualLinkState.targetPlanet === 'moon' ? 'moon' : 'mars';
+      const planetLabel = planet === 'moon' ? 'Moon' : 'Mars';
+      openTerrainComparison({
+        viewMode: 'compare',
+        earthSite: { name: 'Dual Link (Earth)', lat: dualLinkState.earthLat, lon: dualLinkState.earthLon },
+        targetSite: { name: `Dual Link (${planetLabel})`, planet, lat: dualLinkState.targetLat, lon: dualLinkState.targetLon },
+        radiusKm: 10
+      });
+    });
+  }
 
   document.getElementById('btn-gps-clear').addEventListener('click', () => {
     clearCustomPins();

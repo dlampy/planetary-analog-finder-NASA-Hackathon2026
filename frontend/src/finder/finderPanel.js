@@ -6,6 +6,7 @@ import { bringWindowToFront, clampWindowToViewport, makeWindowDraggable } from '
 import { toggleToolsMenu } from '../ui/popups.js';
 import { open2DMapAt, registerAnalogPinClickCallback } from '../map2d/leafletMap.js';
 import { escapeHtml } from './csvAndTopsis.js';
+import { openTerrainComparison } from '../terrain/terrainComparatorPanel.js';
 import {
   computeBundleFromCSVs,
   computePointAnalogsFromCSVs,
@@ -349,11 +350,39 @@ export function selectAnalogRankItem(item, targetObj, missionObj, shouldDrawMap 
       <strong>Where the Analogy Breaks Down:</strong>
       ${escapeHtml(item.analogy_limitations)}
     </div>
-    <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center;font-size:11px">
+    <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px">
       <a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;text-decoration:none">Reference Source</a>
-      <button type="button" class="finder-recalc-btn" id="btn-finder-focus-link">Draw 3D Link &amp; 2D Footprint</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+        <button type="button" class="finder-recalc-btn" id="btn-finder-compare-terrain">Compare 3D Terrain</button>
+        <button type="button" class="finder-recalc-btn" id="btn-finder-focus-link">Draw 3D Link &amp; 2D Footprint</button>
+      </div>
     </div>
   `;
+
+  const btnCompareTerrain = document.getElementById('btn-finder-compare-terrain');
+  if (btnCompareTerrain) {
+    btnCompareTerrain.addEventListener('click', () => {
+      appState.lastTerrainPairSource = 'finder';
+      const fp = String(missionObj.footprint_mode || 'circle_5km');
+      openTerrainComparison({
+        viewMode: 'compare',
+        earthSite: {
+          name: item.micro_site_name || item.name || 'Earth Analog',
+          lat: item.lat,
+          lon: item.lon,
+          features: item.features
+        },
+        targetSite: {
+          name: targetObj.target_name || targetObj.target_id,
+          planet: String(targetObj.planet || 'moon').toLowerCase(),
+          lat: targetObj.lat,
+          lon: targetObj.lon,
+          features: targetObj.features
+        },
+        radiusKm: fp === 'circle_5km' ? 10 : 5
+      });
+    });
+  }
 
   const btnFocus = document.getElementById('btn-finder-focus-link');
   const triggerVisualSync = () => {
@@ -365,7 +394,8 @@ export function selectAnalogRankItem(item, targetObj, missionObj, shouldDrawMap 
       earthLon: item.lon,
       targetPlanet: targetObj.planet.toLowerCase(),
       targetLat: targetObj.lat,
-      targetLon: targetObj.lon
+      targetLon: targetObj.lon,
+      pairSource: 'finder'
     });
     open2DMapAt('earth', item.lat, item.lon, `#${item.rank} ${item.micro_site_name}`, missionObj.footprint_mode);
   };

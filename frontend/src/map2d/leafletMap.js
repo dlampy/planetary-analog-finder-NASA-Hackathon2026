@@ -3,6 +3,7 @@ import { appState } from '../state/appState.js';
 import { threeCtx } from '../scene/threeScene.js';
 import { vector3ToLatLon } from '../scene/planetBuilder.js';
 import { setPickedPin3D } from '../scene/markersAndArcs.js';
+import { openTerrainComparison } from '../terrain/terrainComparatorPanel.js';
 import { populateGpsFrom2DMap } from '../ui/popups.js';
 import { bringWindowToFront, clampWindowToViewport, makeWindowDraggable } from '../ui/windowManager.js';
 
@@ -48,6 +49,7 @@ function ensureLeafletMap() {
     appState.map2dState.lat = lat;
     appState.map2dState.lon = lon;
     appState.map2dState.label = 'Selected 2D map point';
+    appState.map2dState.footprintMode = null;
     map2dCoords.textContent = `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
     if (leafletMarker) leafletMarker.setLatLng([lat, lon]);
     setPickedPin3D(appState.map2dState.planetKey, lat, lon);
@@ -103,6 +105,7 @@ export function open2DMapAt(planetKey, lat, lon, label, footprintMode = null) {
   map2dState.lat = clampedLat;
   map2dState.lon = lon;
   map2dState.label = label || '';
+  map2dState.footprintMode = footprintMode || null;
 
   const pName = PLANET_CONFIG[planetKey] ? PLANET_CONFIG[planetKey].title : planetKey;
   map2dTitle.textContent = label ? `2D · ${label}` : `2D View · ${pName}`;
@@ -204,6 +207,27 @@ export function initMap2DAndRaycaster() {
   btnMap2dSend.addEventListener('click', () => {
     populateGpsFrom2DMap(appState.map2dState.planetKey, appState.map2dState.lat, appState.map2dState.lon);
   });
+
+  const btnMap2dTerrain = document.getElementById('btn-map2d-terrain');
+  if (btnMap2dTerrain) {
+    btnMap2dTerrain.addEventListener('click', () => {
+      const { planetKey, lat, lon, label, footprintMode } = appState.map2dState;
+      const body = planetKey === 'moon' ? 'moon' : (planetKey === 'mars' ? 'mars' : 'earth');
+      const title = PLANET_CONFIG[body] ? PLANET_CONFIG[body].title : body;
+      const fp = String(footprintMode || '');
+      const radiusKm = (fp === 'square_1km' || fp === 'circle_500m') ? 5 : 10;
+      openTerrainComparison({
+        viewMode: 'single',
+        site: {
+          planet: body,
+          lat,
+          lon,
+          name: label || `${title} Map Point`
+        },
+        radiusKm
+      });
+    });
+  }
 
   // Click directly on the 3D surface (only triggers when not dragging to orbit)
   const raycaster = new THREE.Raycaster();

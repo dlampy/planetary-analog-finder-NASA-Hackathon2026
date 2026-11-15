@@ -110,6 +110,10 @@
   <div id="marker-tooltip"></div>
 
   <div class="left-column" id="left-column">
+    <div class="top-left-launcher">
+      <button class="ctrl-btn gps-menu-btn top-left-terrain-btn" id="btn-terrain-menu" type="button">3D Terrain Comparator</button>
+    </div>
+
     <div class="brand">
       <div class="brand-top-row">
         <span class="brand-badge">NASA Space Apps 2026 · 3D Explorer</span>
@@ -353,12 +357,14 @@
 
     <div class="gps-actions">
       <button class="gps-submit-btn" id="btn-gps-link" type="button">Link &amp; Render 3D</button>
+      <button class="gps-terrain-btn" id="btn-gps-terrain" type="button">3D Terrain</button>
       <button class="gps-clear-btn" id="btn-gps-clear" type="button">Clear</button>
     </div>
   </div>
 
   <div class="dual-link-banner" id="dual-link-banner" hidden>
     <span id="dual-link-text">Linking 2 GPS coordinates</span>
+    <button class="dual-terrain-btn" id="btn-dual-terrain" type="button">Compare 3D Terrain</button>
     <button class="dual-exit-btn" id="btn-exit-dual" type="button">Exit Dual-Planet Mode</button>
   </div>
 
@@ -380,7 +386,82 @@
     <div id="map2d-canvas"></div>
     <div class="map2d-footer">
       <span class="map2d-source" id="map2d-source">Esri World Imagery</span>
-      <button class="map2d-send-btn" id="btn-map2d-send" type="button">Assign to GPS 1</button>
+      <div class="map2d-fbtns">
+        <button class="map2d-terrain-btn" id="btn-map2d-terrain" type="button" title="Open 3D Terrain relief for this coordinate">3D Terrain</button>
+        <button class="map2d-send-btn" id="btn-map2d-send" type="button">Assign to GPS 1</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Side-by-side / Single 3D Relief Terrain Viewer & Comparator -->
+  <section class="terrain-popup" id="terrain-popup" hidden aria-label="3D Terrain Comparator">
+    <div class="terrain-popup-header" title="Hold left click to drag window · Double-click to Expand">
+      <div>
+        <div class="gps-popup-title">3D Terrain Comparator</div>
+        <div class="terrain-subtitle" id="terrain-subtitle">Side-by-side DEM cutaway relief (Earth Analog vs Moon / Mars Target)</div>
+      </div>
+      <div class="map2d-hbtns">
+        <button class="map2d-icon-btn" id="btn-terrain-expand" type="button" title="Expand / Collapse">Expand</button>
+        <button class="map2d-icon-btn" id="btn-terrain-close" type="button" title="Close">Close</button>
+      </div>
+    </div>
+
+    <div class="terrain-toolbar">
+      <div class="terrain-ctrl-group">
+        <span>View:</span>
+        <button class="finder-filter-chip active" type="button" data-terrain-layout="compare">Dual Compare</button>
+        <button class="finder-filter-chip" type="button" data-terrain-layout="single">Single Site</button>
+      </div>
+      <div class="terrain-ctrl-group">
+        <span>Radius:</span>
+        <button class="finder-filter-chip" type="button" data-terrain-radius="5">5 km</button>
+        <button class="finder-filter-chip active" type="button" data-terrain-radius="10">10 km</button>
+        <button class="finder-filter-chip" type="button" data-terrain-radius="25">25 km</button>
+      </div>
+      <div class="terrain-ctrl-group">
+        <span>Surface:</span>
+        <button class="finder-filter-chip active" type="button" data-terrain-mode="satellite">Surface Relief</button>
+        <button class="finder-filter-chip" type="button" data-terrain-mode="elevation">Elevation Ramp</button>
+        <button class="finder-filter-chip" type="button" data-terrain-mode="wireframe">Wireframe</button>
+      </div>
+      <div class="terrain-ctrl-group">
+        <label for="terrain-exag-slider">Exaggeration:</label>
+        <input class="terrain-exag-range" id="terrain-exag-slider" type="range" min="1.0" max="4.5" step="0.1" value="2.0" />
+        <span id="terrain-exag-val">2.0x</span>
+        <button class="finder-filter-chip active" id="btn-terrain-sync" type="button">Sync Camera</button>
+        <button class="finder-filter-chip" id="btn-terrain-reset" type="button">Reset View</button>
+        <button class="finder-filter-chip" id="btn-terrain-refresh" type="button">Reload Pair</button>
+      </div>
+    </div>
+
+    <div class="terrain-split-grid">
+      <div class="terrain-pane" id="terrain-earth-pane">
+        <div class="terrain-pane-header">
+          <div class="terrain-pane-title" id="terrain-earth-title">Earth Analog</div>
+          <div class="terrain-pane-coords" id="terrain-earth-coords">0.000°, 0.000°</div>
+        </div>
+        <div class="terrain-canvas-wrap" id="terrain-earth-canvas">
+          <div class="terrain-loading-badge" id="terrain-earth-status" hidden>Loading Earth DEM &amp; Imagery...</div>
+        </div>
+        <div class="terrain-pane-footer">
+          <div class="terrain-stats-line" id="terrain-earth-stats">Waiting for Earth elevation patch...</div>
+          <div class="terrain-source-line" id="terrain-earth-source">DEM: -- | Surface: --</div>
+        </div>
+      </div>
+
+      <div class="terrain-pane" id="terrain-target-pane">
+        <div class="terrain-pane-header">
+          <div class="terrain-pane-title" id="terrain-target-title">Planetary Target</div>
+          <div class="terrain-pane-coords" id="terrain-target-coords">0.000°, 0.000°</div>
+        </div>
+        <div class="terrain-canvas-wrap" id="terrain-target-canvas">
+          <div class="terrain-loading-badge" id="terrain-target-status" hidden>Loading Target DEM &amp; Surface...</div>
+        </div>
+        <div class="terrain-pane-footer">
+          <div class="terrain-stats-line" id="terrain-target-stats">Waiting for target elevation patch...</div>
+          <div class="terrain-source-line" id="terrain-target-source">DEM: -- | Surface: --</div>
+        </div>
+      </div>
     </div>
   </section>
 
