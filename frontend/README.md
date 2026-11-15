@@ -15,10 +15,10 @@ Once GitHub Pages is enabled for this repository, you can view the live interact
   3. **Mars:** Iron-oxide terrain, dark basaltic plains, canyon systems, polar ice caps, and a thin dusty atmosphere.
 - Click the bottom selector cards (or press `1`, `2`, `3`) to switch between 3D models and inspect planetary stats.
 - Supports mouse drag-to-orbit, scroll-to-zoom, auto-rotate toggle, 3D wireframe mode, and view reset.
-- **Google Earth-style Navigation**: Compass `N` ring to align North (`0°`), 4-way D-Pad, `+`/`-` Zoom slider, and **`⊥ Upright Axis`** lock.
+- **Google Earth-style Navigation**: Compass `N` ring to align North (`0°`), 4-way D-Pad, `+`/`-` Zoom slider, and **`Upright Axis`** lock.
 - **High-Resolution 2D Map (Tile Map API)**: Click anywhere on a 3D globe to open a Leaflet 2D map (Esri World Imagery, OpenStreetMap, NASA GIBS MODIS, OpenPlanetaryMap LRO/Mars).
-- **Dual GPS Link (ML Model) & Draggable Windows**: Link Earth ↔ Moon/Mars coordinates with a 3D animated arc; all floating windows (`2D Map`, `Dual GPS Link`, `NASA Data Sources`, `Planetary Analog Finder`) can be dragged by their headers.
-- **Planetary Analog Finder (`🧪 Analog Finder (ML)`)**: Ranks the Top 10 best-matching Earth sites per Moon/Mars target and mission purpose (`Rover Mobility`, `Ground ISRU`, `Lava Tube Habitat`) using a two-stage **Weighted BallTree KNN → Analog TOPSIS** pipeline across 5 quantitative environmental features, complete with 5 similarity bars ($S_i$), **Where the Analogy Breaks Down** warning box, automated fallback notes, 3D pins, and 2D operational footprints (`1 km × 1 km`, `r = 5 km`, `r = 500 m`).
+- **Dual GPS Link (ML Model) & Draggable Windows**: Link Earth <-> Moon/Mars coordinates with a 3D animated arc; all floating windows (`2D Map`, `Dual GPS Link`, `NASA Data Sources`, `Planetary Analog Finder`) can be dragged by their headers.
+- **Planetary Analog Finder (`Analog Finder (ML)`)**: Ranks the Top 10 best-matching Earth sites per Moon/Mars target and mission purpose (`Rover Mobility`, `Ground ISRU`, `Lava Tube Habitat`) using a two-stage **Weighted BallTree KNN -> Analog TOPSIS** pipeline across 5 quantitative environmental features, complete with 5 similarity bars ($S_i$), **Where the Analogy Breaks Down** warning box, automated fallback notes, 3D pins, and 2D operational footprints (`1 km × 1 km`, `r = 5 km`, `r = 500 m`).
 
 ## Data & ML Architecture (`../backend/` & `app.py`)
 - **`../backend/data/merged_earth_features_clean.csv`** *(and `placeholderData/earth_sites_1000.csv`)*: Official 51-site Earth analog dataset with terrain, thermal, aridity/ice, and subsurface void features.
@@ -30,10 +30,10 @@ Once GitHub Pages is enabled for this repository, you can view the live interact
   pip install -r ../backend/requirements.txt
   python app.py --export-json
   ```
-  *(Or start the FastAPI server from the repository root: `python -m uvicorn backend.main:app --reload --port 8000` — when using `start_local.bat`, you can also click **`↻ Recompute from CSV`** inside `🧪 Analog Finder (ML)` to connect to the live backend API or recompute directly in JS).*
+  *(Or start the FastAPI server from the repository root: `python -m uvicorn backend.main:app --reload --port 8000` — when using `start_local.bat`, you can also click **`Recompute from CSV`** inside `Analog Finder (ML)` under **Tools** to connect to the live backend API or recompute directly in JS).*
 
 ## Official Open Data Sources (NASA & Partner Agencies)
-Integrated directly into the **`📚 NASA Data Sources`** menu inside the app:
+Integrated directly into the **`NASA Data Sources`** menu inside **Tools**:
 
 ### NASA (Earth · Moon · Mars)
 - **NASA Earthdata Search**: https://search.earthdata.nasa.gov/
@@ -75,4 +75,4 @@ To render realistic Earth continents, lunar Maria/craters, and Martian topograph
    ```bash
    python -m http.server 8000
    ```
-   *(If `index.html` is opened directly via `file://`, the app falls back to procedural textures or allows picking a local image via `📂 Pick map image from device`).*
+   *(If `index.html` is opened directly via `file://`, the app falls back to procedural textures or allows picking a local image via `Pick map image from device`).*

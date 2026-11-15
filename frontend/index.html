@@ -24,7 +24,7 @@
           <h2 id="welcome-title">Plan Your Planetary Analog Mission</h2>
           <p class="welcome-subtitle">Choose <strong>Moon</strong> or <strong>Mars</strong>, select a mission type from <code>missions.csv</code>, and pick target coordinates on that world to find every matching <strong>Earth</strong> analog testbed site.</p>
         </div>
-        <button class="gps-close-x" id="btn-welcome-close" type="button" title="Close welcome screen">✕</button>
+        <button class="gps-close-x" id="btn-welcome-close" type="button" title="Close welcome screen">Close</button>
       </div>
 
       <div class="welcome-body">
@@ -37,7 +37,6 @@
           <div class="welcome-planet-grid" id="welcome-planet-grid">
             <button class="welcome-planet-card moon active" type="button" data-wizard-planet="moon">
               <div class="welcome-planet-top">
-                <span class="welcome-planet-icon">🌕</span>
                 <div>
                   <div class="welcome-planet-name">Moon (Artemis Target)</div>
                   <div class="welcome-planet-meta">Hard vacuum · 0.165g · Polar PSR ice &amp; lava tube skylights</div>
@@ -46,7 +45,6 @@
             </button>
             <button class="welcome-planet-card mars" type="button" data-wizard-planet="mars">
               <div class="welcome-planet-top">
-                <span class="welcome-planet-icon">🔴</span>
                 <div>
                   <div class="welcome-planet-name">Mars (Red Planet)</div>
                   <div class="welcome-planet-meta">CO₂ tenuous air · 0.38g · Ancient lakebeds, dunes &amp; ice caps</div>
@@ -73,7 +71,7 @@
           </div>
           <div class="welcome-location-panel">
             <div class="welcome-pick-row">
-              <button class="welcome-pick-globe-btn" id="btn-wizard-pick-globe" type="button">🎯 Click Point Directly on 3D <span id="welcome-pick-planet-label">Moon</span></button>
+              <button class="welcome-pick-globe-btn" id="btn-wizard-pick-globe" type="button">Click Point Directly on 3D <span id="welcome-pick-planet-label">Moon</span></button>
             </div>
             <div class="welcome-preset-label">Or select a catalog site on <span id="welcome-preset-planet-label">Moon</span>:</div>
             <div class="welcome-preset-grid" id="welcome-preset-list"></div>
@@ -86,7 +84,7 @@
                 <span>Longitude (-180..180)</span>
                 <input class="gps-input" id="wizard-lon-input" type="number" step="0.01" min="-180" max="180" value="0.00" />
               </label>
-              <button class="welcome-btn-primary wizard-find-btn" id="btn-wizard-find" type="button">🔎 Find Earth Matches</button>
+              <button class="welcome-btn-primary wizard-find-btn" id="btn-wizard-find" type="button">Find Earth Matches</button>
             </div>
             <div class="gps-error" id="wizard-error" hidden></div>
           </div>
@@ -94,17 +92,17 @@
       </div>
 
       <div class="welcome-footer">
-        <div class="welcome-always-note">🔄 Shown automatically on reload · Also accessible anytime in <strong>⚙️ Settings</strong></div>
+        <div class="welcome-always-note">Shown automatically on reload · Also accessible anytime in <strong>Tools</strong></div>
         <div class="welcome-footer-actions">
-          <button class="welcome-btn-secondary" id="btn-welcome-finder" type="button">🧪 Open Analog Finder</button>
-          <button class="welcome-btn-primary" id="btn-welcome-explore" type="button">🌍 Explore 3D Freely</button>
+          <button class="welcome-btn-secondary" id="btn-welcome-finder" type="button">Open Analog Finder</button>
+          <button class="welcome-btn-primary" id="btn-welcome-explore" type="button">Explore 3D Freely</button>
         </div>
       </div>
     </div>
   </div>
 
   <div class="target-picker-hud" id="target-picker-hud" hidden role="status" aria-live="polite">
-    <span id="target-picker-label">🎯 Click any point on the 3D Moon sphere to find all matching Earth analog sites</span>
+    <span id="target-picker-label">Click any point on the 3D Moon sphere to find all matching Earth analog sites</span>
     <button class="target-picker-cancel" id="btn-picker-cancel" type="button">Cancel &amp; Return</button>
   </div>
 
@@ -115,7 +113,7 @@
     <div class="brand">
       <div class="brand-top-row">
         <span class="brand-badge">NASA Space Apps 2026 · 3D Explorer</span>
-        <button class="left-collapse-btn" id="btn-left-hide" type="button" title="Hide the entire left info panel">« Hide</button>
+        <button class="left-collapse-btn" id="btn-left-hide" type="button" title="Hide the entire left info panel">Hide</button>
       </div>
       <h1>3D Earth, Moon &amp; Mars Explorer</h1>
       <p>Drag to rotate · Scroll to zoom · Click 3 cards below (or keys 1, 2, 3)</p>
@@ -133,35 +131,35 @@
       </div>
 
       <div class="texture-status" id="texture-status">Checking planetary map imagery...</div>
-      <button class="local-upload-btn" id="btn-pick-texture" type="button">📂 Pick map image from device</button>
+      <button class="local-upload-btn" id="btn-pick-texture" type="button">Pick map image from device</button>
       <input type="file" id="local-texture-input" accept="image/*" hidden />
     </aside>
   </div>
 
-  <div class="right-column" id="right-settings-wrap">
-    <button class="ctrl-btn gps-menu-btn" id="btn-settings-menu" type="button" aria-expanded="false" aria-controls="settings-menu" title="Open Settings &amp; Tools">⚙️ Settings ▾</button>
+  <div class="right-column" id="right-tools-wrap">
+    <button class="ctrl-btn gps-menu-btn" id="btn-tools-menu" type="button" aria-expanded="false" aria-controls="tools-menu" title="Open Tools">Tools</button>
 
-    <div class="settings-drawer" id="settings-menu" hidden>
+    <div class="tools-drawer" id="tools-menu" hidden>
       <div>
-        <div class="settings-section-title">3D Display &amp; Controls</div>
-        <div class="settings-grid">
-          <button class="ctrl-btn" id="btn-autorotate" type="button">⟳ Auto-Rotate</button>
-          <button class="ctrl-btn active" id="btn-upright-axis" type="button" title="Keep planetary North–South spin axis upright (0°)">⊥ Upright Axis</button>
-          <button class="ctrl-btn active" id="btn-markers" type="button">📍 Analog Pins</button>
-          <button class="ctrl-btn" id="btn-wireframe" type="button">▦ 3D Wireframe</button>
-          <button class="ctrl-btn active" id="btn-toggle-left-panel" type="button" title="Show / Hide the left info panel">◧ Info Panel</button>
-          <button class="ctrl-btn" id="btn-reset" type="button">⌖ Reset View</button>
+        <div class="tools-section-title">3D Display &amp; Controls</div>
+        <div class="tools-grid">
+          <button class="ctrl-btn" id="btn-autorotate" type="button">Auto-Rotate</button>
+          <button class="ctrl-btn active" id="btn-upright-axis" type="button" title="Keep planetary North–South spin axis upright (0°)">Upright Axis</button>
+          <button class="ctrl-btn active" id="btn-markers" type="button">Analog Pins</button>
+          <button class="ctrl-btn" id="btn-wireframe" type="button">3D Wireframe</button>
+          <button class="ctrl-btn active" id="btn-toggle-left-panel" type="button" title="Show / Hide the left info panel">Info Panel</button>
+          <button class="ctrl-btn" id="btn-reset" type="button">Reset View</button>
         </div>
       </div>
 
       <div style="border-top:1px solid rgba(255,255,255,0.09);padding-top:10px">
-        <div class="settings-section-title">Science &amp; Data Tools</div>
-        <div class="settings-stack">
-          <button class="ctrl-btn gps-menu-btn" id="btn-mission-wizard-menu" type="button"><span>🎯 Mission Target Finder (Moon/Mars → Earth)</span><span style="color:#38bdf8">↗</span></button>
-          <button class="ctrl-btn gps-menu-btn" id="btn-finder-menu" type="button"><span>🧪 Analog Finder (ML)</span><span style="color:#38bdf8">↗</span></button>
-          <button class="ctrl-btn gps-menu-btn" id="btn-resources-menu" type="button"><span>📚 NASA Data Sources</span><span style="color:#38bdf8">↗</span></button>
-          <button class="ctrl-btn gps-menu-btn" id="btn-gps-menu" type="button"><span>☰ Dual GPS Link</span><span style="color:#38bdf8">↗</span></button>
-          <button class="ctrl-btn gps-menu-btn" id="btn-welcome-menu" type="button"><span>👋 Welcome &amp; Mission Wizard</span><span style="color:#38bdf8">↗</span></button>
+        <div class="tools-section-title">Science &amp; Data Tools</div>
+        <div class="tools-stack">
+          <button class="ctrl-btn gps-menu-btn" id="btn-mission-wizard-menu" type="button"><span>Mission Target Finder (Moon/Mars to Earth)</span></button>
+          <button class="ctrl-btn gps-menu-btn" id="btn-finder-menu" type="button"><span>Analog Finder (ML)</span></button>
+          <button class="ctrl-btn gps-menu-btn" id="btn-resources-menu" type="button"><span>NASA Data Sources</span></button>
+          <button class="ctrl-btn gps-menu-btn" id="btn-gps-menu" type="button"><span>Dual GPS Link</span></button>
+          <button class="ctrl-btn gps-menu-btn" id="btn-welcome-menu" type="button"><span>Welcome &amp; Mission Wizard</span></button>
         </div>
       </div>
     </div>
@@ -201,19 +199,19 @@
 
   <div class="resources-popup" id="resources-popup" hidden>
     <div class="resources-popup-header" title="Hold left click to drag window">
-      <span class="gps-popup-title"><span class="drag-grip" aria-hidden="true">⋮⋮</span>📚 Open Data Sources (NASA &amp; Partners)</span>
-      <button class="gps-close-x" id="btn-resources-close" type="button" title="Close">✕</button>
+      <span class="gps-popup-title">Open Data Sources (NASA &amp; Partners)</span>
+      <button class="gps-close-x" id="btn-resources-close" type="button" title="Close">Close</button>
     </div>
     <div class="resources-body">
       <div>
         <div class="res-group-title">NASA · Earth Data</div>
         <div class="res-list">
           <a class="res-link-card" href="https://search.earthdata.nasa.gov/" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>NASA Earthdata Search</span><span>Open ↗</span></div>
+            <div class="res-link-name"><span>NASA Earthdata Search</span><span>Open</span></div>
             <div class="res-link-desc">Primary portal for discovering and downloading NASA Earth Science observation datasets (DEM, temperature, moisture, snow/ice...).</div>
           </a>
           <a class="res-link-card" href="https://worldview.earthdata.nasa.gov/index.html" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>NASA Worldview (GIBS)</span><span>Open ↗</span></div>
+            <div class="res-link-name"><span>NASA Worldview (GIBS)</span><span>Open</span></div>
             <div class="res-link-desc">Real-time NASA satellite imagery and environmental layers viewer (NASA GIBS MODIS layer integrated directly in the 2D map).</div>
           </a>
         </div>
@@ -223,15 +221,15 @@
         <div class="res-group-title">NASA · Moon &amp; Mars</div>
         <div class="res-list">
           <a class="res-link-card" href="https://pds.nasa.gov/" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>NASA Planetary Data System (PDS)</span><span>Open ↗</span></div>
+            <div class="res-link-name"><span>NASA Planetary Data System (PDS)</span><span>Open</span></div>
             <div class="res-link-desc">Long-term planetary science archive from orbiters, landers, and rovers (imagery, geology, atmosphere, cartography).</div>
           </a>
           <a class="res-link-card" href="https://pds-geosciences.wustl.edu/missions/lro/" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>NASA Lunar Reconnaissance Orbiter (LRO)</span><span>Open ↗</span></div>
+            <div class="res-link-name"><span>NASA Lunar Reconnaissance Orbiter (LRO)</span><span>Open</span></div>
             <div class="res-link-desc">Lunar observations from LROC, LOLA (laser altimetry), Diviner, LEND, and Mini-RF radar.</div>
           </a>
           <a class="res-link-card" href="https://pds-geosciences.wustl.edu/missions/lro/diviner.htm" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>NASA LRO Diviner Lunar Data</span><span>Open ↗</span></div>
+            <div class="res-link-name"><span>NASA LRO Diviner Lunar Data</span><span>Open</span></div>
             <div class="res-link-desc">Lunar surface temperature maps and polar/resource products used to benchmark Earth's cold and icy analog regions.</div>
           </a>
         </div>
@@ -241,27 +239,27 @@
         <div class="res-group-title">Partner Space Agencies (CSA · ESA · JAXA)</div>
         <div class="res-list">
           <a class="res-link-card" href="https://donnees-data.asc-csa.gc.ca/en/dataset/rcm" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>CSA · RADARSAT Constellation Mission (RCM)</span><span>Open ↗</span></div>
+            <div class="res-link-name"><span>CSA · RADARSAT Constellation Mission (RCM)</span><span>Open</span></div>
             <div class="res-link-desc">Day/night cloud-penetrating Earth observation radar data from the Canadian Space Agency.</div>
           </a>
           <a class="res-link-card" href="https://donnees-data.asc-csa.gc.ca/en/dataset/radarsat1" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>CSA · RADARSAT 1 Open Archive</span><span>Open ↗</span></div>
+            <div class="res-link-name"><span>CSA · RADARSAT 1 Open Archive</span><span>Open</span></div>
             <div class="res-link-desc">Open Synthetic Aperture Radar (SAR) archive penetrating clouds, smoke, and fog.</div>
           </a>
           <a class="res-link-card" href="https://github.com/asc-csa/Synthetic_Aperture_Radar_Tutorial" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>CSA · SAR Python &amp; QGIS Tutorial</span><span>Open ↗</span></div>
+            <div class="res-link-name"><span>CSA · SAR Python &amp; QGIS Tutorial</span><span>Open</span></div>
             <div class="res-link-desc">Python &amp; QGIS guides for accessing and processing SAR imagery for ML model training.</div>
           </a>
           <a class="res-link-card" href="https://dataspace.copernicus.eu/" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>ESA · Copernicus Data Space Ecosystem</span><span>Open ↗</span></div>
+            <div class="res-link-name"><span>ESA · Copernicus Data Space Ecosystem</span><span>Open</span></div>
             <div class="res-link-desc">Free Sentinel satellite data (land, ocean, atmosphere) from the European Space Agency.</div>
           </a>
           <a class="res-link-card" href="https://opensciencedata.esa.int/" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>ESA · Open Science Catalog</span><span>Open ↗</span></div>
+            <div class="res-link-name"><span>ESA · Open Science Catalog</span><span>Open</span></div>
             <div class="res-link-desc">Catalog of open Earth science datasets, products, and workflows from ESA.</div>
           </a>
           <a class="res-link-card" href="https://gportal.jaxa.jp/gpr/index/index" target="_blank" rel="noopener noreferrer">
-            <div class="res-link-name"><span>JAXA · G-Portal</span><span>Open ↗</span></div>
+            <div class="res-link-name"><span>JAXA · G-Portal</span><span>Open</span></div>
             <div class="res-link-desc">JAXA Earth observation products covering precipitation, snow cover, vegetation, and more.</div>
           </a>
         </div>
@@ -271,8 +269,8 @@
 
   <div class="finder-popup" id="finder-popup" hidden>
     <div class="finder-popup-header" title="Hold left click to drag window">
-      <span class="gps-popup-title"><span class="drag-grip" aria-hidden="true">⋮⋮</span>🧪 Planetary Analog Finder (KNN → TOPSIS)</span>
-      <button class="gps-close-x" id="btn-finder-close" type="button" title="Close">✕</button>
+      <span class="gps-popup-title">Planetary Analog Finder (KNN -> TOPSIS)</span>
+      <button class="gps-close-x" id="btn-finder-close" type="button" title="Close">Close</button>
     </div>
     <div class="finder-body">
       <div class="gps-field" style="margin-bottom:0">
@@ -282,7 +280,7 @@
         </label>
         <div class="finder-target-row">
           <select class="gps-select" id="finder-target-select" style="margin-bottom:0"></select>
-          <button class="finder-pick-btn" id="btn-finder-pick-globe" type="button" title="Pick a point directly on Moon or Mars">🎯 Mission Wizard</button>
+          <button class="finder-pick-btn" id="btn-finder-pick-globe" type="button" title="Pick a point directly on Moon or Mars">Mission Wizard</button>
         </div>
       </div>
 
@@ -316,14 +314,14 @@
     </div>
     <div class="finder-footer">
       <span id="finder-source-status">Source: Precomputed JSON</span>
-      <button class="finder-recalc-btn" id="btn-finder-csv" type="button" title="Recompute KNN + TOPSIS from Live Backend API or CSV datasets">↻ Recompute from CSV</button>
+      <button class="finder-recalc-btn" id="btn-finder-csv" type="button" title="Recompute KNN + TOPSIS from Live Backend API or CSV datasets">Recompute from CSV</button>
     </div>
   </div>
 
   <div class="gps-popup" id="gps-popup" hidden>
     <div class="gps-popup-header" title="Hold left click to drag window">
-      <span class="gps-popup-title"><span class="drag-grip" aria-hidden="true">⋮⋮</span>🔗 Dual GPS Link (ML Model)</span>
-      <button class="gps-close-x" id="btn-gps-close" type="button" title="Close">✕</button>
+      <span class="gps-popup-title">Dual GPS Link (ML Model)</span>
+      <button class="gps-close-x" id="btn-gps-close" type="button" title="Close">Close</button>
     </div>
 
     <div class="gps-field">
@@ -347,14 +345,14 @@
     </div>
 
     <div class="gps-presets">
-      <button class="gps-preset-chip" type="button" data-earth="-24.5, -69.2" data-planet="mars" data-dest="18.38, 77.58">Atacama ↔ Jezero</button>
-      <button class="gps-preset-chip" type="button" data-earth="75.37, -89.68" data-planet="moon" data-dest="-89.54, 0.0">Haughton ↔ Shackleton</button>
+      <button class="gps-preset-chip" type="button" data-earth="-24.5, -69.2" data-planet="mars" data-dest="18.38, 77.58">Atacama &lt;-&gt; Jezero</button>
+      <button class="gps-preset-chip" type="button" data-earth="75.37, -89.68" data-planet="moon" data-dest="-89.54, 0.0">Haughton &lt;-&gt; Shackleton</button>
     </div>
 
     <div class="gps-error" id="gps-error" hidden></div>
 
     <div class="gps-actions">
-      <button class="gps-submit-btn" id="btn-gps-link" type="button">🔗 Link &amp; Render 3D</button>
+      <button class="gps-submit-btn" id="btn-gps-link" type="button">Link &amp; Render 3D</button>
       <button class="gps-clear-btn" id="btn-gps-clear" type="button">Clear</button>
     </div>
   </div>
@@ -368,22 +366,21 @@
   <section class="map2d-panel" id="map2d-panel" hidden aria-label="High-resolution 2D map">
     <div class="map2d-header" title="Hold left click to drag window">
       <div style="display:flex;align-items:center;min-width:0;">
-        <span class="drag-grip" aria-hidden="true">⋮⋮</span>
         <div class="map2d-title-wrap">
           <div class="map2d-title" id="map2d-title">2D View · Earth</div>
           <div class="map2d-coords" id="map2d-coords">0.0000°, 0.0000°</div>
         </div>
       </div>
       <div class="map2d-hbtns">
-        <button class="map2d-icon-btn" id="btn-map2d-expand" type="button" title="Expand / Collapse">⤢</button>
-        <button class="map2d-icon-btn" id="btn-map2d-close" type="button" title="Close">✕</button>
+        <button class="map2d-icon-btn" id="btn-map2d-expand" type="button" title="Expand / Collapse">Expand</button>
+        <button class="map2d-icon-btn" id="btn-map2d-close" type="button" title="Close">Close</button>
       </div>
     </div>
     <div class="map2d-layers" id="map2d-layers"></div>
     <div id="map2d-canvas"></div>
     <div class="map2d-footer">
       <span class="map2d-source" id="map2d-source">Esri World Imagery</span>
-      <button class="map2d-send-btn" id="btn-map2d-send" type="button">➕ Assign to GPS 1</button>
+      <button class="map2d-send-btn" id="btn-map2d-send" type="button">Assign to GPS 1</button>
     </div>
   </section>
 

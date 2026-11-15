@@ -67,8 +67,8 @@
   justify-content: flex-end;
 }
 
-/* Unified single settings drawer at top-right */
-.settings-drawer {
+/* Unified single tools drawer at top-right */
+.tools-drawer {
   pointer-events: auto;
   width: min(300px, calc(100vw - 24px));
   background: rgba(9, 14, 28, 0.94);
@@ -84,11 +84,11 @@
   animation: popIn 0.16s ease-out;
 }
 
-.settings-drawer[hidden] {
+.tools-drawer[hidden] {
   display: none;
 }
 
-.settings-section-title {
+.tools-section-title {
   font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
@@ -97,32 +97,32 @@
   margin-bottom: 6px;
 }
 
-.settings-grid {
+.tools-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
 }
 
-.settings-grid .ctrl-btn {
+.tools-grid .ctrl-btn {
   width: 100%;
   justify-content: flex-start;
   padding: 8px 10px;
   font-size: 12px;
 }
 
-.settings-grid .ctrl-btn.span-2 {
+.tools-grid .ctrl-btn.span-2 {
   grid-column: 1 / -1;
 }
 
-.settings-stack {
+.tools-stack {
   display: flex;
   flex-direction: column;
   gap: 7px;
 }
 
-.settings-stack .ctrl-btn {
+.tools-stack .ctrl-btn {
   width: 100%;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding: 9px 11px;
   font-size: 12px;
 }
@@ -143,7 +143,7 @@
   transition: opacity 0.16s ease, transform 0.16s ease;
 }
 
-.ge-nav.is-hidden-by-settings {
+.ge-nav.is-hidden-by-tools {
   opacity: 0;
   transform: translateX(10px);
   pointer-events: none;

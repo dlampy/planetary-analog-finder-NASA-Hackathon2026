@@ -1,6 +1,6 @@
 import { appState } from '../state/appState.js';
 import { exitDualLinkMode, selectPlanet } from './infoPanel.js';
-import { toggleSettingsMenu } from './popups.js';
+import { toggleToolsMenu } from './popups.js';
 import { setPickedPin3D } from '../scene/markersAndArcs.js';
 import { registerGlobePickCallback } from '../map2d/leafletMap.js';
 import {
@@ -34,7 +34,7 @@ function setPickingHudVisible(visible, planetKey) {
   targetPickerHud.hidden = !visible;
   if (visible && targetPickerLabel) {
     const label = planetKey === 'mars' ? 'Mars' : 'Moon';
-    targetPickerLabel.textContent = `🎯 Click any point on the 3D ${label} sphere to find all matching Earth analog sites`;
+    targetPickerLabel.textContent = `Click any point on the 3D ${label} sphere to find all matching Earth analog sites`;
   }
 }
 
@@ -51,7 +51,7 @@ export function enterGlobeTargetPickerMode(planetKey, missionId) {
 
   closeWelcomeModal();
   toggleFinderPopup(false);
-  toggleSettingsMenu(false);
+  toggleToolsMenu(false);
 
   if (appState.dualLinkState.active) {
     exitDualLinkMode(planet);
@@ -155,7 +155,7 @@ function renderPresetTargets() {
 
   presetListEl.innerHTML = filtered.map(t => `
     <button type="button" class="welcome-preset-chip ${t.target_id === selectedPresetId ? 'active' : ''}" data-target-id="${escapeHtml(t.target_id)}">
-      ${planet === 'moon' ? '🌕' : '🔴'} ${escapeHtml(t.target_name)} (${Number(t.lat).toFixed(2)}°, ${Number(t.lon).toFixed(2)}°)
+      ${escapeHtml(t.target_name)} (${Number(t.lat).toFixed(2)}°, ${Number(t.lon).toFixed(2)}°)
     </button>
   `).join('');
 
@@ -305,13 +305,13 @@ export function initWelcomeModal() {
   }
   if (btnWelcomeMenu) {
     btnWelcomeMenu.addEventListener('click', () => {
-      toggleSettingsMenu(false);
+      toggleToolsMenu(false);
       openWelcomeModal();
     });
   }
   if (btnMissionWizardMenu) {
     btnMissionWizardMenu.addEventListener('click', () => {
-      toggleSettingsMenu(false);
+      toggleToolsMenu(false);
       openWelcomeModal();
     });
   }

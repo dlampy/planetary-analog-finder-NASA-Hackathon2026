@@ -2,9 +2,9 @@ import { clearCustomPins, parseGpsInput } from '../scene/markersAndArcs.js';
 import { applyAnalogLink, exitDualLinkMode } from './infoPanel.js';
 import { bringWindowToFront, clampWindowToViewport, makeWindowDraggable } from './windowManager.js';
 
-let rightSettingsWrap = null;
-let btnSettingsMenu = null;
-let settingsMenu = null;
+let rightToolsWrap = null;
+let btnToolsMenu = null;
+let toolsMenu = null;
 let geNavEl = null;
 
 let leftColumnEl = null;
@@ -31,15 +31,15 @@ export function toggleLeftPanel(forceShow) {
   } catch (_) {}
 }
 
-export function toggleSettingsMenu(forceOpen) {
-  if (!settingsMenu || !btnSettingsMenu) return;
-  const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : settingsMenu.hidden;
-  settingsMenu.hidden = !nextOpen;
-  btnSettingsMenu.classList.toggle('active', nextOpen);
-  btnSettingsMenu.setAttribute('aria-expanded', String(nextOpen));
-  btnSettingsMenu.textContent = nextOpen ? '⚙️ Settings ▴' : '⚙️ Settings ▾';
+export function toggleToolsMenu(forceOpen) {
+  if (!toolsMenu || !btnToolsMenu) return;
+  const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : toolsMenu.hidden;
+  toolsMenu.hidden = !nextOpen;
+  btnToolsMenu.classList.toggle('active', nextOpen);
+  btnToolsMenu.setAttribute('aria-expanded', String(nextOpen));
+  btnToolsMenu.textContent = 'Tools';
   if (geNavEl) {
-    geNavEl.classList.toggle('is-hidden-by-settings', nextOpen);
+    geNavEl.classList.toggle('is-hidden-by-tools', nextOpen);
     geNavEl.setAttribute('aria-hidden', String(nextOpen));
   }
 }
@@ -51,7 +51,7 @@ export function toggleGpsPopup(forceOpen) {
   if (btnGpsMenu) btnGpsMenu.classList.toggle('active', nextOpen);
   if (gpsError) gpsError.hidden = true;
   if (nextOpen) {
-    toggleSettingsMenu(false);
+    toggleToolsMenu(false);
     bringWindowToFront(gpsPopup);
     clampWindowToViewport(gpsPopup);
   }
@@ -63,7 +63,7 @@ export function toggleResourcesPopup(forceOpen) {
   resourcesPopup.hidden = !nextOpen;
   if (btnResourcesMenu) btnResourcesMenu.classList.toggle('active', nextOpen);
   if (nextOpen) {
-    toggleSettingsMenu(false);
+    toggleToolsMenu(false);
     bringWindowToFront(resourcesPopup);
     clampWindowToViewport(resourcesPopup);
   }
@@ -92,9 +92,9 @@ export function populateGpsFrom2DMap(planetKey, lat, lon) {
 }
 
 export function initPopups() {
-  rightSettingsWrap = document.getElementById('right-settings-wrap');
-  btnSettingsMenu = document.getElementById('btn-settings-menu');
-  settingsMenu = document.getElementById('settings-menu');
+  rightToolsWrap = document.getElementById('right-tools-wrap');
+  btnToolsMenu = document.getElementById('btn-tools-menu');
+  toolsMenu = document.getElementById('tools-menu');
   geNavEl = document.getElementById('ge-nav');
 
   leftColumnEl = document.getElementById('left-column');
@@ -110,21 +110,21 @@ export function initPopups() {
   if (btnLeftHide) btnLeftHide.addEventListener('click', () => toggleLeftPanel(false));
   if (btnToggleLeftPanel) btnToggleLeftPanel.addEventListener('click', () => toggleLeftPanel());
 
-  if (btnSettingsMenu && settingsMenu) {
-    btnSettingsMenu.addEventListener('click', (e) => {
+  if (btnToolsMenu && toolsMenu) {
+    btnToolsMenu.addEventListener('click', (e) => {
       e.stopPropagation();
-      toggleSettingsMenu();
+      toggleToolsMenu();
     });
 
     document.addEventListener('click', (e) => {
-      if (!settingsMenu.hidden && rightSettingsWrap && !rightSettingsWrap.contains(e.target)) {
-        toggleSettingsMenu(false);
+      if (!toolsMenu.hidden && rightToolsWrap && !rightToolsWrap.contains(e.target)) {
+        toggleToolsMenu(false);
       }
     });
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !settingsMenu.hidden) {
-        toggleSettingsMenu(false);
+      if (e.key === 'Escape' && !toolsMenu.hidden) {
+        toggleToolsMenu(false);
       }
     });
   }

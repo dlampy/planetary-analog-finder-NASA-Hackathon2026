@@ -3,7 +3,7 @@ import { appState } from '../state/appState.js';
 import { renderTopAnalogPins } from '../scene/markersAndArcs.js';
 import { applyAnalogLink } from '../ui/infoPanel.js';
 import { bringWindowToFront, clampWindowToViewport, makeWindowDraggable } from '../ui/windowManager.js';
-import { toggleSettingsMenu } from '../ui/popups.js';
+import { toggleToolsMenu } from '../ui/popups.js';
 import { open2DMapAt, registerAnalogPinClickCallback } from '../map2d/leafletMap.js';
 import { escapeHtml } from './csvAndTopsis.js';
 import {
@@ -170,7 +170,7 @@ export async function runMissionAnalogSearch({ targetBody, lat, lon, label, miss
   const { finderState } = appState;
   finderPopup.hidden = false;
   if (btnFinderMenu) btnFinderMenu.classList.add('active');
-  toggleSettingsMenu(false);
+  toggleToolsMenu(false);
   bringWindowToFront(finderPopup);
   clampWindowToViewport(finderPopup);
 
@@ -223,7 +223,7 @@ export async function runMissionAnalogSearch({ targetBody, lat, lon, label, miss
 
 async function recomputeFinderFromCSVs() {
   const { finderState } = appState;
-  finderSourceStatus.textContent = 'Reading backend/data CSVs and computing KNN → TOPSIS...';
+  finderSourceStatus.textContent = 'Reading backend/data CSVs and computing KNN -> TOPSIS...';
   btnFinderCsv.disabled = true;
   try {
     const bundle = await computeBundleFromCSVs();
@@ -257,7 +257,7 @@ export async function ensureFinderDataLoaded(forceRefresh = false, { autoRender 
 
     const catalog = await loadMissionCatalogMetadata();
     if (catalog.source === 'csv') {
-      finderSourceStatus.textContent = 'Backend offline · Computing live CSV KNN → TOPSIS...';
+      finderSourceStatus.textContent = 'Backend offline · Computing live CSV KNN -> TOPSIS...';
       const bundle = await computeBundleFromCSVs();
       finderState.apiBase = null;
       finderState.data = bundle;
@@ -301,7 +301,7 @@ export function selectAnalogRankItem(item, targetObj, missionObj, shouldDrawMap 
     const tVal = targetObj.features && targetObj.features[f.col] !== undefined ? targetObj.features[f.col] : '—';
     return `
       <div class="finder-bar-row">
-        <span class="finder-bar-label">${escapeHtml(f.label)}${isWeak ? ' ⚠' : ''}</span>
+        <span class="finder-bar-label">${escapeHtml(f.label)}${isWeak ? ' [Weakest]' : ''}</span>
         <div class="finder-bar-track"><div class="finder-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
         <span class="finder-bar-val">${pct}% (${eVal}${f.unit} / ${tVal}${f.unit})</span>
       </div>
@@ -346,12 +346,12 @@ export function selectAnalogRankItem(item, targetObj, missionObj, shouldDrawMap 
       <strong style="color:#34d399">Why Suitable:</strong> ${escapeHtml(item.why_suitable)}
     </div>
     <div class="finder-warn-box">
-      <strong>⚠ Where the Analogy Breaks Down:</strong>
+      <strong>Where the Analogy Breaks Down:</strong>
       ${escapeHtml(item.analogy_limitations)}
     </div>
     <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center;font-size:11px">
-      <a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;text-decoration:none">Reference Source ↗</a>
-      <button type="button" class="finder-recalc-btn" id="btn-finder-focus-link">🛰 Draw 3D Link &amp; 2D Footprint</button>
+      <a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;text-decoration:none">Reference Source</a>
+      <button type="button" class="finder-recalc-btn" id="btn-finder-focus-link">Draw 3D Link &amp; 2D Footprint</button>
     </div>
   `;
 
@@ -390,7 +390,7 @@ export function renderFinderUI(autoFocusTop1 = false) {
 
   finderTargetSelect.innerHTML = data.targets.map(t => `
     <option value="${escapeHtml(t.target_id)}" ${t.target_id === finderState.selectedTargetId ? 'selected' : ''}>
-      ${t.planet === 'moon' ? '🌕' : '🔴'} ${escapeHtml(t.target_name)} (${Number(t.lat).toFixed(2)}°, ${Number(t.lon).toFixed(2)}°)
+      [${t.planet === 'moon' ? 'Moon' : 'Mars'}] ${escapeHtml(t.target_name)} (${Number(t.lat).toFixed(2)}°, ${Number(t.lon).toFixed(2)}°)
     </option>
   `).join('');
 
@@ -481,7 +481,7 @@ export function toggleFinderPopup(forceOpen, { skipLoad = false } = {}) {
   finderPopup.hidden = !nextOpen;
   if (btnFinderMenu) btnFinderMenu.classList.toggle('active', nextOpen);
   if (nextOpen) {
-    toggleSettingsMenu(false);
+    toggleToolsMenu(false);
     bringWindowToFront(finderPopup);
     clampWindowToViewport(finderPopup);
     if (!skipLoad) ensureFinderDataLoaded();

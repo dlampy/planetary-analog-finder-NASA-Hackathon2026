@@ -88,7 +88,7 @@ export function applyAnalogLink({ earthLat, earthLon, targetPlanet, targetLat, t
 
   const targetLabel = targetPlanet === 'moon' ? 'Moon' : 'Mars';
   document.getElementById('dual-link-text').textContent =
-    `🔗 Earth (${earthLat.toFixed(2)}°, ${earthLon.toFixed(2)}°) ⟷ ${targetLabel} (${targetLat.toFixed(2)}°, ${targetLon.toFixed(2)}°)`;
+    `Earth (${earthLat.toFixed(2)}°, ${earthLon.toFixed(2)}°) <-> ${targetLabel} (${targetLat.toFixed(2)}°, ${targetLon.toFixed(2)}°)`;
   document.getElementById('dual-link-banner').hidden = false;
   updateInfoPanel('earth');
 }
@@ -132,16 +132,16 @@ export function updateInfoPanel(key) {
   const texStatusEl = document.getElementById('texture-status');
   if (st.status === 'real') {
     texStatusEl.className = 'texture-status real';
-    texStatusEl.textContent = `✓ Using real imagery: ${st.fileName}`;
+    texStatusEl.textContent = `Using real imagery: ${st.fileName}`;
   } else if (st.status === 'loading') {
     texStatusEl.className = 'texture-status';
-    texStatusEl.textContent = '⏳ Loading satellite imagery from assets/textures/...';
+    texStatusEl.textContent = 'Loading satellite imagery from assets/textures/...';
   } else if (window.location.protocol === 'file:') {
     texStatusEl.className = 'texture-status fallback';
-    texStatusEl.textContent = '⚠ Opened via file://. Run start_local.bat or click below to pick a local texture.';
+    texStatusEl.textContent = 'Opened via file://. Run start_local.bat or click below to pick a local texture.';
   } else {
     texStatusEl.className = 'texture-status fallback';
-    texStatusEl.textContent = `⚠ Texture not found (${cfg.textures.color.slice(0, 2).join(' or ')}) in assets/textures/.`;
+    texStatusEl.textContent = `Texture not found (${cfg.textures.color.slice(0, 2).join(' or ')}) in assets/textures/.`;
   }
 }
 

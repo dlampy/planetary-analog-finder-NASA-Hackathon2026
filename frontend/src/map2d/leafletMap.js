@@ -107,7 +107,7 @@ export function open2DMapAt(planetKey, lat, lon, label, footprintMode = null) {
   const pName = PLANET_CONFIG[planetKey] ? PLANET_CONFIG[planetKey].title : planetKey;
   map2dTitle.textContent = label ? `2D · ${label}` : `2D View · ${pName}`;
   map2dCoords.textContent = `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
-  btnMap2dSend.textContent = planetKey === 'earth' ? '➕ Assign to GPS 1 (Earth)' : `➕ Assign to GPS 2 (${planetKey === 'moon' ? 'Moon' : 'Mars'})`;
+  btnMap2dSend.textContent = planetKey === 'earth' ? 'Assign to GPS 1 (Earth)' : `Assign to GPS 2 (${planetKey === 'moon' ? 'Moon' : 'Mars'})`;
 
   map2dPanel.hidden = false;
   bringWindowToFront(map2dPanel);
@@ -190,8 +190,10 @@ export function initMap2DAndRaycaster() {
     map2dPanel.hidden = true;
   });
 
-  document.getElementById('btn-map2d-expand').addEventListener('click', () => {
-    map2dPanel.classList.toggle('expanded');
+  const btnExpand = document.getElementById('btn-map2d-expand');
+  btnExpand.addEventListener('click', () => {
+    const isExpanded = map2dPanel.classList.toggle('expanded');
+    btnExpand.textContent = isExpanded ? 'Collapse' : 'Expand';
     bringWindowToFront(map2dPanel);
     setTimeout(() => {
       clampWindowToViewport(map2dPanel);

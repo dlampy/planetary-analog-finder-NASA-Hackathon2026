@@ -312,7 +312,7 @@ export function initMarkerHoverTooltip() {
         tooltip.style.display = 'block';
         tooltip.style.left = (e.clientX + 14) + 'px';
         tooltip.style.top = (e.clientY + 14) + 'px';
-        tooltip.innerHTML = `<strong>🎯 Select ${bodyLabel} Target</strong><br><span style="color:#38bdf8">${lat.toFixed(2)}°, ${lon.toFixed(2)}° (Click to match Earth)</span>`;
+        tooltip.innerHTML = `<strong>Select ${bodyLabel} Target</strong><br><span style="color:#38bdf8">${lat.toFixed(2)}°, ${lon.toFixed(2)}° (Click to match Earth)</span>`;
         renderer.domElement.style.cursor = 'crosshair';
       } else {
         tooltip.style.display = 'none';
