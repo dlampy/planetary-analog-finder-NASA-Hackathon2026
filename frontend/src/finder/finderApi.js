@@ -246,19 +246,21 @@ export async function computePointAnalogsFromCSVs({
   lon,
   label,
   missionId,
-  evaluateAll = true
+  evaluateAll = true,
+  featuresOverride = null
 }) {
   const planet = String(targetBody || 'moon').toLowerCase() === 'mars' ? 'mars' : 'moon';
   const resolved = resolvePlanetaryPointJS(planet, lat, lon);
   const targetName = label || `${planet === 'moon' ? 'Moon' : 'Mars'} (${Number(lat).toFixed(2)}°, ${Number(lon).toFixed(2)}°)`;
+  const hasOverride = featuresOverride && featuresOverride.slope_deg !== undefined;
   const targetObj = {
     target_id: `custom_${planet}_${Number(lat).toFixed(3)}_${Number(lon).toFixed(3)}`,
     planet,
     target_name: targetName,
     lat: Number(lat),
     lon: Number(lon),
-    features: resolved.features,
-    resolved_profile: resolved.resolved_profile
+    features: hasOverride ? featuresOverride : resolved.features,
+    resolved_profile: hasOverride ? null : resolved.resolved_profile
   };
 
   try {

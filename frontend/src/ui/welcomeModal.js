@@ -1,5 +1,5 @@
 import { appState } from '../state/appState.js';
-import { exitDualLinkMode, focusCameraOnLatLon, selectPlanet } from './infoPanel.js';
+import { exitDualLinkMode, selectPlanet } from './infoPanel.js';
 import { toggleSettingsMenu } from './popups.js';
 import { setPickedPin3D } from '../scene/markersAndArcs.js';
 import { registerGlobePickCallback } from '../map2d/leafletMap.js';
@@ -285,7 +285,6 @@ export function initWelcomeModal() {
       lon,
       missionId: appState.missionWizardState.missionId
     });
-    focusCameraOnLatLon(planet, lat, lon);
   });
 
   registerReopenWizardCallback(() => openWelcomeModal());

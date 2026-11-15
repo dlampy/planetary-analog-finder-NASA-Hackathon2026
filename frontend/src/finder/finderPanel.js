@@ -104,23 +104,54 @@ async function refreshMatchForTarget(targetObj, missionId) {
     return;
   }
 
-  if (!finderState.apiBase) return;
-  try {
-    const payload = await fetchBackendMatch(finderState.apiBase, {
-      targetId: targetObj.target_id,
-      missionId,
-      evaluateAll: true
-    });
-    if (seq !== finderState.matchReqSeq) return;
-    if (payload && Array.isArray(payload.results)) {
-      if (!finderState.data.results[targetObj.target_id]) finderState.data.results[targetObj.target_id] = {};
-      finderState.data.results[targetObj.target_id][missionId] = payload.results;
-      const cnt = payload.meta && payload.meta.earth_site_count ? payload.meta.earth_site_count : '?';
-      finderSourceStatus.textContent = `Source: Live Backend API (${cnt} Earth sites)`;
-      renderFinderUI(true);
+  if (!finderState.apiBase) {
+    finderState.apiBase = await probeLiveBackendBase();
+  }
+
+  if (finderState.apiBase) {
+    try {
+      const payload = await fetchBackendMatch(finderState.apiBase, {
+        targetId: targetObj.target_id,
+        missionId,
+        evaluateAll: true
+      });
+      if (seq !== finderState.matchReqSeq) return;
+      if (payload && Array.isArray(payload.results)) {
+        if (!finderState.data.results[targetObj.target_id]) finderState.data.results[targetObj.target_id] = {};
+        finderState.data.results[targetObj.target_id][missionId] = payload.results;
+        const cnt = payload.meta && payload.meta.earth_site_count ? payload.meta.earth_site_count : '?';
+        finderSourceStatus.textContent = `Source: Live Backend API (${cnt} Earth sites)`;
+        renderFinderUI(true);
+      }
+      return;
+    } catch (err) {
+      console.warn('Backend /analogs/match fallback to CSV/cached data:', err);
     }
-  } catch (err) {
-    console.warn('Backend /analogs/match fallback to cached data:', err);
+  }
+
+  // Offline full evaluation fallback for preset targets when cached JSON only has top 10
+  const cached = finderState.data.results[targetObj.target_id]?.[missionId] || [];
+  if (cached.length <= 10) {
+    try {
+      const payload = await computePointAnalogsFromCSVs({
+        targetBody: targetObj.planet,
+        lat: targetObj.lat,
+        lon: targetObj.lon,
+        label: targetObj.target_name,
+        missionId,
+        evaluateAll: true,
+        featuresOverride: targetObj.features
+      });
+      if (seq !== finderState.matchReqSeq || !payload || !Array.isArray(payload.results)) return;
+      if (payload.meta?.source_mode === 'csv' && payload.results.length > cached.length) {
+        if (!finderState.data.results[targetObj.target_id]) finderState.data.results[targetObj.target_id] = {};
+        finderState.data.results[targetObj.target_id][missionId] = payload.results;
+        finderSourceStatus.textContent = `Source: Offline CSV Engine (${payload.meta.earth_site_count} Earth sites)`;
+        renderFinderUI(true);
+      }
+    } catch (_) {
+      // Keep precomputed JSON results
+    }
   }
 }
 

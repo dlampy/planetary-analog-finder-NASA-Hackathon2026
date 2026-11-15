@@ -9,10 +9,8 @@ import { clampAllFloatingWindows } from './ui/windowManager.js';
 import { initMap2DAndRaycaster } from './map2d/leafletMap.js';
 import { initFinderPanel } from './finder/finderPanel.js';
 import {
-  focusRecommendedPlace,
   initWelcomeModal,
-  openWelcomeModal,
-  shouldAutoShowWelcome
+  openWelcomeModal
 } from './ui/welcomeModal.js';
 
 function bootstrap() {
@@ -55,7 +53,7 @@ function bootstrap() {
 
       const params = new URLSearchParams(window.location.search);
       const hasUrlLink = params.has('earth') && params.has('dest');
-      if (!hasUrlLink && shouldAutoShowWelcome()) {
+      if (!hasUrlLink) {
         openWelcomeModal();
       }
 
@@ -91,8 +89,6 @@ function bootstrap() {
 
       if (appState.pendingLinkArgs) {
         applyAnalogLink(appState.pendingLinkArgs);
-      } else if (appState.pendingWelcomePlace) {
-        focusRecommendedPlace(appState.pendingWelcomePlace);
       } else {
         updateInfoPanel(appState.activePlanetKey);
       }
