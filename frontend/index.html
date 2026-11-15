@@ -37,18 +37,12 @@
           <div class="welcome-planet-grid" id="welcome-planet-grid">
             <button class="welcome-planet-card moon active" type="button" data-wizard-planet="moon">
               <div class="welcome-planet-top">
-                <div>
-                  <div class="welcome-planet-name">Moon (Artemis Target)</div>
-                  <div class="welcome-planet-meta">Hard vacuum · 0.165g · Polar PSR ice &amp; lava tube skylights</div>
-                </div>
+                <div class="welcome-planet-name">Moon</div>
               </div>
             </button>
             <button class="welcome-planet-card mars" type="button" data-wizard-planet="mars">
               <div class="welcome-planet-top">
-                <div>
-                  <div class="welcome-planet-name">Mars (Red Planet)</div>
-                  <div class="welcome-planet-meta">CO₂ tenuous air · 0.38g · Ancient lakebeds, dunes &amp; ice caps</div>
-                </div>
+                <div class="welcome-planet-name">Mars</div>
               </div>
             </button>
           </div>
@@ -67,13 +61,10 @@
           <div class="wizard-step-header">
             <span class="wizard-step-num">3</span>
             <span class="wizard-step-title">Choose Point on <span id="welcome-step3-planet">Moon</span></span>
-            <span class="wizard-step-hint">Click on the 3D globe or pick coordinates</span>
+            <span class="wizard-step-hint">Select a catalog site, enter coordinates, or click on 3D below</span>
           </div>
           <div class="welcome-location-panel">
-            <div class="welcome-pick-row">
-              <button class="welcome-pick-globe-btn" id="btn-wizard-pick-globe" type="button">Click Point Directly on 3D <span id="welcome-pick-planet-label">Moon</span></button>
-            </div>
-            <div class="welcome-preset-label">Or select a catalog site on <span id="welcome-preset-planet-label">Moon</span>:</div>
+            <div class="welcome-preset-label">Select a catalog site on <span id="welcome-preset-planet-label">Moon</span>:</div>
             <div class="welcome-preset-grid" id="welcome-preset-list"></div>
             <div class="welcome-coords-row">
               <label class="wizard-coord-field">
@@ -92,10 +83,10 @@
       </div>
 
       <div class="welcome-footer">
-        <div class="welcome-always-note">Shown automatically on reload · Also accessible anytime in <strong>Tools</strong></div>
+        <div class="welcome-always-note">Shown automatically on reload · Re-open anytime via <strong>Mission Target Finder</strong></div>
         <div class="welcome-footer-actions">
           <button class="welcome-btn-secondary" id="btn-welcome-finder" type="button">Open Analog Finder</button>
-          <button class="welcome-btn-primary" id="btn-welcome-explore" type="button">Explore 3D Freely</button>
+          <button class="welcome-btn-primary" id="btn-wizard-pick-globe" type="button">Click Point Directly on 3D <span id="welcome-pick-planet-label">Moon</span></button>
         </div>
       </div>
     </div>
@@ -166,8 +157,6 @@
         <div class="tools-stack">
           <button class="ctrl-btn gps-menu-btn" id="btn-finder-menu" type="button"><span>Analog Finder (ML)</span></button>
           <button class="ctrl-btn gps-menu-btn" id="btn-resources-menu" type="button"><span>NASA Data Sources</span></button>
-          <button class="ctrl-btn gps-menu-btn" id="btn-gps-menu" type="button"><span>Dual GPS Link</span></button>
-          <button class="ctrl-btn gps-menu-btn" id="btn-welcome-menu" type="button"><span>Welcome &amp; Mission Wizard</span></button>
         </div>
       </div>
     </div>

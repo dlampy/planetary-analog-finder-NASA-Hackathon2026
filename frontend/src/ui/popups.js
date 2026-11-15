@@ -14,7 +14,6 @@ let btnLeftHide = null;
 let btnToggleLeftPanel = null;
 let showLeftPanel = true;
 
-let btnGpsMenu = null;
 let gpsPopup = null;
 let gpsEarthInput = null;
 let gpsTargetPlanet = null;
@@ -50,7 +49,6 @@ export function toggleGpsPopup(forceOpen) {
   if (!gpsPopup) return;
   const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : gpsPopup.hidden;
   gpsPopup.hidden = !nextOpen;
-  if (btnGpsMenu) btnGpsMenu.classList.toggle('active', nextOpen);
   if (gpsError) gpsError.hidden = true;
   if (nextOpen) {
     toggleToolsMenu(false);
@@ -131,7 +129,6 @@ export function initPopups() {
     });
   }
 
-  btnGpsMenu = document.getElementById('btn-gps-menu');
   gpsPopup = document.getElementById('gps-popup');
   gpsEarthInput = document.getElementById('gps-earth-input');
   gpsTargetPlanet = document.getElementById('gps-target-planet');
@@ -147,7 +144,6 @@ export function initPopups() {
   btnResourcesMenu.addEventListener('click', () => toggleResourcesPopup());
   document.getElementById('btn-resources-close').addEventListener('click', () => toggleResourcesPopup(false));
 
-  btnGpsMenu.addEventListener('click', () => toggleGpsPopup());
   document.getElementById('btn-gps-close').addEventListener('click', () => toggleGpsPopup(false));
 
   document.querySelectorAll('.gps-preset-chip').forEach(chip => {

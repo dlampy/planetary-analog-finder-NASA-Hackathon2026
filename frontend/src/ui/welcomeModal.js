@@ -321,23 +321,14 @@ export function initWelcomeModal() {
   registerReopenWizardCallback(() => openWelcomeModal());
 
   const btnClose = document.getElementById('btn-welcome-close');
-  const btnExplore = document.getElementById('btn-welcome-explore');
   const btnFinder = document.getElementById('btn-welcome-finder');
-  const btnWelcomeMenu = document.getElementById('btn-welcome-menu');
   const btnMissionWizardMenu = document.getElementById('btn-mission-wizard-menu');
 
   if (btnClose) btnClose.addEventListener('click', () => closeWelcomeModal());
-  if (btnExplore) btnExplore.addEventListener('click', () => closeWelcomeModal());
   if (btnFinder) {
     btnFinder.addEventListener('click', () => {
       closeWelcomeModal();
       toggleFinderPopup(true);
-    });
-  }
-  if (btnWelcomeMenu) {
-    btnWelcomeMenu.addEventListener('click', () => {
-      toggleToolsMenu(false);
-      openWelcomeModal();
     });
   }
   if (btnMissionWizardMenu) {

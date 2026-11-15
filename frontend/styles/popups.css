@@ -1091,6 +1091,7 @@
 .welcome-planet-top {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
 }
 
@@ -1098,13 +1099,6 @@
   font-size: 13.5px;
   font-weight: 700;
   color: #f8fafc;
-}
-
-.welcome-planet-meta {
-  margin-top: 2px;
-  font-size: 11px;
-  color: #cbd5e1;
-  line-height: 1.35;
 }
 
 .welcome-mission-grid {
@@ -1172,25 +1166,6 @@
   display: flex;
   flex-direction: column;
   gap: 9px;
-}
-
-.welcome-pick-globe-btn {
-  width: 100%;
-  border: 1px dashed rgba(56, 189, 248, 0.75);
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(37, 99, 235, 0.18));
-  color: #e0f2fe;
-  font-size: 13px;
-  font-weight: 700;
-  padding: 10px 14px;
-  border-radius: 11px;
-  cursor: pointer;
-  transition: all 0.16s ease;
-}
-
-.welcome-pick-globe-btn:hover {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.32), rgba(37, 99, 235, 0.32));
-  border-color: #7dd3fc;
-  transform: translateY(-1px);
 }
 
 .welcome-preset-label {

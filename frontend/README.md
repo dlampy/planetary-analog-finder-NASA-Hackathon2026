@@ -51,7 +51,7 @@ Triggerable from **4 entry points**: Top-Left **`3D Terrain Comparator`**, Finde
 ### 6. Tools Drawer (`Tools`) & Clean Iconless Workspace
 To keep telemetry uncluttered, icons appear **only inside** the Google Earth navigation widget (`#ge-nav`); all buttons/drawers are text-only:
 - **3D Display & Controls**: `Auto-Rotate`, `Upright Axis`, `Analog Pins`, `3D Wireframe`, `Info Panel`, `Reset View`.
-- **Science & Data Tools**: `Mission Target Finder (Moon/Mars to Earth)`, `Analog Finder (ML)`, `NASA Data Sources` (direct links to NASA Earthdata, Worldview GIBS, PDS, LRO/Diviner, CSA RADARSAT/RCM, ESA Copernicus/Open Science Catalog, JAXA G-Portal), `Dual GPS Link` (`?earth=...&target=...&dest=...` URL support + `window.linkAnalogCoordinates`), and `Welcome & Mission Wizard`.
+- **Science & Data Tools**: `Analog Finder (ML)` and `NASA Data Sources` (direct links to NASA Earthdata, Worldview GIBS, PDS, LRO/Diviner, CSA RADARSAT/RCM, ESA Copernicus/Open Science Catalog, JAXA G-Portal). *(2-planet orbital linking remains active via Analog Finder matches, 2D View GPS assignment, `?earth=...&target=...&dest=...` URL params, and `window.linkAnalogCoordinates`.)*
 
 ---
 
